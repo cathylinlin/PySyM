@@ -1,8 +1,11 @@
 """抽象群论基类模块"""
 from abc import ABC, abstractmethod
-from typing import TypeVar, Generic, List, Optional, Dict, Tuple
+from typing import TypeVar, Generic, List, Optional, Dict, Tuple, Set, Any
 from dataclasses import dataclass
+from itertools import combinations
 
+# 避免循环导入，使用延迟导入
+Subgroup = None
 
 T = TypeVar('T')  # 群元素类型
 
@@ -17,6 +20,7 @@ class GroupProperties:
     center_order: int             # 中心阶数
     conjugacy_classes: int        # 共轭类数目
     generators: List[T]           # 生成元
+    is_finite: bool               # 是否有限群
 
 
 class GroupElement(ABC):
@@ -66,8 +70,15 @@ class Group(ABC, Generic[T]):
     """群抽象基类"""
     
     def __init__(self, name: str = ""):
+        """
+        初始化群
+        
+        Args:
+            name: 群的名称
+        """
         self.name = name
-        self._cache: Dict[str, any] = {}
+        self._cache: Dict[str, Any] = {}
+        self._properties: Optional[GroupProperties] = None
     
     @abstractmethod
     def identity(self) -> T:
@@ -96,13 +107,18 @@ class Group(ABC, Generic[T]):
     
     def is_abelian(self) -> bool:
         """检查是否为阿贝尔群"""
+        if self._properties and self._properties.is_abelian is not None:
+            return self._properties.is_abelian
+        
         if self.order() > 1000:  # 大群采样检查
             return self._sample_abelian_check()
         elems = list(self.elements())
         for i, a in enumerate(elems):
             for b in elems[i:]:
                 if self.multiply(a, b) != self.multiply(b, a):
+                    self._update_properties(is_abelian=False)
                     return False
+        self._update_properties(is_abelian=True)
         return True
     
     def _sample_abelian_check(self, samples: int = 100) -> bool:
@@ -116,10 +132,99 @@ class Group(ABC, Generic[T]):
                 return False
         return True
     
+    def is_simple(self) -> bool:
+        """检查是否为单群（无非平凡正规子群）"""
+        if self._properties and self._properties.is_simple is not None:
+            return self._properties.is_simple
+        
+        if self.order() <= 1:
+            return False
+        
+        # 检查所有可能的正规子群
+        for subgroup in self.normal_subgroups():
+            if 1 < subgroup.order() < self.order():
+                self._update_properties(is_simple=False)
+                return False
+        
+        self._update_properties(is_simple=True)
+        return True
+    
+    def is_solvable(self) -> bool:
+        """检查是否为可解群"""
+        if self._properties and self._properties.is_solvable is not None:
+            return self._properties.is_solvable
+        
+        if self.order() <= 1:
+            self._update_properties(is_solvable=True)
+            return True
+        
+        try:
+            # 使用导出列（derived series）来判断可解性
+            current_group = self
+            max_iterations = self.order() * 2
+            iteration = 0
+            
+            while iteration < max_iterations:
+                # 计算导群 [G, G]
+                derived_elements = set()
+                elements = current_group.elements()
+                
+                for a in elements:
+                    for b in elements:
+                        # 交换子 [a, b] = a*b*a^{-1}*b^{-1}
+                        commutator = current_group.multiply(a, current_group.multiply(b, current_group.multiply(current_group.inverse(a), current_group.inverse(b))))
+                        derived_elements.add(commutator)
+                
+                # 生成导群
+                derived_subgroup = current_group.generate_subgroup(list(derived_elements))
+                
+                # 如果导群是平凡群，则群可解
+                if derived_subgroup.order() == 1:
+                    self._update_properties(is_solvable=True)
+                    return True
+                
+                # 如果导群与当前群相同，则群不可解
+                if derived_subgroup.order() == current_group.order():
+                    self._update_properties(is_solvable=False)
+                    return False
+                
+                current_group = derived_subgroup
+                iteration += 1
+            
+            # 达到最大迭代次数，认为不可解
+            self._update_properties(is_solvable=False)
+            return False
+        except Exception:
+            self._update_properties(is_solvable=False)
+            return False
+    
+    def _update_properties(self, **kwargs) -> None:
+        """更新群属性"""
+        if self._properties is None:
+            # 计算中心阶数，确保缓存正确设置
+            center_order = self.center_order()
+            # 计算共轭类数目
+            conjugacy_classes = self.conjugacy_classes_count() if 'conjugacy_classes_count' in self._cache else None
+            
+            self._properties = GroupProperties(
+                order=self.order(),
+                is_abelian=kwargs.get('is_abelian'),
+                is_simple=kwargs.get('is_simple'),
+                is_solvable=kwargs.get('is_solvable'),
+                center_order=center_order,
+                conjugacy_classes=conjugacy_classes,
+                generators=None,
+                is_finite=True  # 默认假设有限
+            )
+        else:
+            for key, value in kwargs.items():
+                if hasattr(self._properties, key):
+                    setattr(self._properties, key, value)
+    
     @abstractmethod
     def elements(self) -> List[T]:
         """所有群元素（有限群）"""
-        pass
+        raise NotImplementedError("子类必须实现elements方法")
     
     def generate_subgroup(self, generators: List[T]) -> 'Subgroup[T]':
         """由生成元生成的子群
@@ -130,6 +235,9 @@ class Group(ABC, Generic[T]):
         Returns:
             由生成元生成的子群
         """
+        global Subgroup
+        if Subgroup is None:
+            from .subgroup import Subgroup
         if not generators:
             return Subgroup(self, [self.identity()])
         
@@ -137,14 +245,17 @@ class Group(ABC, Generic[T]):
             if g not in self:
                 raise ValueError(f"元素 {g} 不属于该群")
         
-        subgroup_elements: set = set()
+        subgroup_elements: Set[T] = set()
         subgroup_elements.add(self.identity())
         
         for g in generators:
             subgroup_elements.add(g)
         
         changed = True
-        while changed:
+        max_iterations = self.order() * self.order()
+        iterations = 0
+        
+        while changed and iterations < max_iterations:
             changed = False
             current_elements = list(subgroup_elements)
             for a in current_elements:
@@ -158,42 +269,198 @@ class Group(ABC, Generic[T]):
                     if inv_product not in subgroup_elements:
                         subgroup_elements.add(inv_product)
                         changed = True
+            iterations += 1
         
         return Subgroup(self, list(subgroup_elements))
     
     def conjugacy_classes(self) -> List[List[T]]:
         """计算共轭类"""
+        if 'conjugacy_classes' in self._cache:
+            return self._cache['conjugacy_classes']
+        
         if self.order() > 500:
             raise ValueError("群太大，无法计算共轭类")
         
         elems = list(self.elements())
-        unprocessed = set(elems)
+        elem_to_index = {elem: i for i, elem in enumerate(elems)}
+        unprocessed = set(range(len(elems)))
         classes = []
         
         while unprocessed:
-            rep = unprocessed.pop()
+            i = unprocessed.pop()
+            rep = elems[i]
             conj_class = {rep}
             
             for g in elems:
                 for h in list(conj_class):
-                    # g * h * g^(-1)
                     conj = self.multiply(g, self.multiply(h, self.inverse(g)))
                     conj_class.add(conj)
             
             classes.append(list(conj_class))
-            unprocessed -= conj_class
+            unprocessed -= {elem_to_index[e] for e in conj_class if e in elem_to_index}
         
+        self._cache['conjugacy_classes'] = classes
+        self._cache['conjugacy_classes_count'] = len(classes)
         return classes
+    
+    def conjugacy_classes_count(self) -> int:
+        """共轭类的数目"""
+        if 'conjugacy_classes_count' in self._cache:
+            return self._cache['conjugacy_classes_count']
+        
+        return len(self.conjugacy_classes())
+    
+    def generators(self) -> List[T]:
+        """获取生成元"""
+        if self._properties and self._properties.generators is not None:
+            return self._properties.generators
+        
+        if self.order() > 100:
+            raise ValueError("群太大，无法计算生成元")
+        
+        identity_elem = self.identity()
+        elements = self.elements()
+        
+        # 特殊情况：平凡群
+        if len(elements) == 1:
+            self._update_properties(generators=[])
+            return []
+        
+        generators = []
+        generated_elements = {identity_elem}
+        
+        # 逐个尝试元素作为生成元
+        for elem in elements:
+            if elem == identity_elem:
+                continue
+            
+            # 计算由当前生成元集合加上新元素生成的子群
+            test_generators = generators + [elem]
+            test_subgroup = self.generate_subgroup(test_generators)
+            test_elements = set(test_subgroup.elements())
+            
+            # 如果生成的子群更大，则添加该元素到生成元列表
+            if len(test_elements) > len(generated_elements):
+                generators.append(elem)
+                generated_elements = test_elements
+                
+                # 如果已经生成了整个群，停止
+                if len(generated_elements) == self.order():
+                    break
+        
+        self._update_properties(generators=generators)
+        return generators
+    
+    def is_finite(self) -> bool:
+        """检查群是否为有限群"""
+        if self._properties and self._properties.is_finite is not None:
+            return self._properties.is_finite
+        
+        # 默认假设有限，除非有特殊说明
+        self._update_properties()
+        return True
     
     def center(self) -> List[T]:
         """计算群中心"""
+        if 'center' in self._cache:
+            return self._cache['center']
+        
+        if self.order() > 500:
+            raise ValueError("群太大，无法计算中心")
+        
         elems = list(self.elements())
         center = []
         for a in elems:
             if all(self.multiply(a, b) == self.multiply(b, a) for b in elems):
                 center.append(a)
+        
+        self._cache['center'] = center
         return center
     
+    def center_order(self) -> int:
+        """群中心的阶数"""
+        if 'center_order' in self._cache:
+            return self._cache['center_order']
+        
+        center = self.center()
+        self._cache['center_order'] = len(center)
+        return len(center)
+    
+    def normal_subgroups(self) -> List['Group']:
+        """获取所有正规子群"""
+        if 'normal_subgroups' in self._cache:
+            return self._cache['normal_subgroups']
+        
+        if not self.is_finite():
+            raise ValueError("无限群没有正规子群列表")
+        
+        normal_subgroups = []
+        for subgroup in self.subgroups():
+            if self.is_normal_subgroup(subgroup):
+                normal_subgroups.append(subgroup)
+        
+        self._cache['normal_subgroups'] = normal_subgroups
+        return normal_subgroups
+    
+    def is_normal_subgroup(self, subgroup: 'Group') -> bool:
+        """检查子群是否为正规子群"""
+        if not self.is_finite():
+            raise ValueError("无限群无法检查正规子群")
+        
+        # 检查对所有g in G, gHg^-1 = H
+        for g in self.elements():
+            for h in subgroup.elements():
+                conjugate = self.multiply(g, self.multiply(h, self.inverse(g)))
+                if conjugate not in subgroup.elements():
+                    return False
+        return True
+    
+    def subgroups(self) -> List['Group']:
+        """获取所有子群"""
+        if 'subgroups' in self._cache:
+            return self._cache['subgroups']
+        
+        if not self.is_finite():
+            raise ValueError("无限群没有子群列表")
+        
+        elements = list(self.elements())
+        n = len(elements)
+        
+        # 存储已经找到的子群（通过元素集合的哈希值）
+        found_subgroups = set()
+        subgroups = []
+        
+        # 从单位元开始
+        identity_elem = self.identity()
+        trivial_subgroup = self.generate_subgroup([identity_elem])
+        subgroups.append(trivial_subgroup)
+        found_subgroups.add(frozenset(trivial_subgroup.elements()))
+        
+        # 逐步构建子群
+        # 遍历所有可能的生成元组合
+        for i in range(1, n):
+            # 使用组合而不是所有子集，减少重复计算
+            for combo in combinations(elements, i):
+                # 生成子群
+                subgroup = self.generate_subgroup(list(combo))
+                subgroup_elems = frozenset(subgroup.elements())
+                
+                # 检查是否已经找到
+                if subgroup_elems not in found_subgroups:
+                    found_subgroups.add(subgroup_elems)
+                    subgroups.append(subgroup)
+        
+        # 添加群本身
+        whole_group = self.generate_subgroup(elements)
+        whole_group_elems = frozenset(whole_group.elements())
+        if whole_group_elems not in found_subgroups:
+            subgroups.append(whole_group)
+        
+        self._cache['subgroups'] = subgroups
+        return subgroups
+    
+
+
     def multiplication_table(self) -> str:
         """生成乘法表
         
@@ -225,166 +492,8 @@ class Group(ABC, Generic[T]):
         
         return "\n".join(lines)
 
-
-class Subgroup(Group[T]):
-    """子群类"""
-    
-    def __init__(self, parent_group: Group[T], elements: List[T], name: str = ""):
-        super().__init__(name or f"Subgroup of {parent_group.name}")
-        self._parent = parent_group
-        self._elements = elements
-        self._element_set = set(elements)
-    
-    def identity(self) -> T:
-        """单位元"""
-        return self._parent.identity()
-    
-    def multiply(self, a: T, b: T) -> T:
-        """群乘法"""
-        return self._parent.multiply(a, b)
-    
-    def inverse(self, a: T) -> T:
-        """逆元"""
-        return self._parent.inverse(a)
-    
-    def __contains__(self, element: T) -> bool:
-        """判断元素是否属于该子群"""
-        return element in self._element_set
-    
-    def order(self) -> int:
-        """子群的阶"""
-        return len(self._elements)
-    
-    def elements(self) -> List[T]:
-        """所有子群元素"""
-        return self._elements.copy()
-    
-    def is_normal(self) -> bool:
-        """检查是否为正规子群"""
-        parent_elems = list(self._parent.elements())
-        for h in self._elements:
-            for g in parent_elems:
-                # g * h * g^(-1)
-                conj = self._parent.multiply(
-                    g, 
-                    self._parent.multiply(h, self._parent.inverse(g))
-                )
-                if conj not in self._element_set:
-                    return False
-        return True
-    
-    def cosets_left(self) -> List[List[T]]:
-        """计算左陪集"""
-        parent_elems = list(self._parent.elements())
-        cosets: List[List[T]] = []
-        used = set()
-        
-        for g in parent_elems:
-            if g in used:
-                continue
-            coset = [self._parent.multiply(g, h) for h in self._elements]
-            cosets.append(coset)
-            for elem in coset:
-                used.add(elem)
-        
-        return cosets
-    
-    def cosets_right(self) -> List[List[T]]:
-        """计算右陪集"""
-        parent_elems = list(self._parent.elements())
-        cosets: List[List[T]] = []
-        used = set()
-        
-        for g in parent_elems:
-            if g in used:
-                continue
-            coset = [self._parent.multiply(h, g) for h in self._elements]
-            cosets.append(coset)
-            for elem in coset:
-                used.add(elem)
-        
-        return cosets
-    
-    def index(self) -> int:
-        """子群的指数（陪集个数）"""
-        parent_order = self._parent.order()
-        subgroup_order = self.order()
-        if parent_order % subgroup_order != 0:
-            raise ValueError(f"子群阶数 {subgroup_order} 不整除父群阶数 {parent_order}，可能不是有效的子群")
-        return parent_order // subgroup_order
+class FiniteGroup(Group[T]):
+    """有限群"""
+    pass
 
 
-class GroupFactory:
-    """用于生成抽象群的工厂类"""
-    
-    @staticmethod
-    def cyclic_group(n: int) -> Group[int]:
-        """生成n阶循环群 C_n
-        
-        Args:
-            n: 群的阶
-            
-        Returns:
-            n阶循环群
-        """
-        from .specific_group import CyclicGroup
-        return CyclicGroup(n)
-    
-    @staticmethod
-    def symmetric_group(n: int) -> Group[Tuple[int, ...]]:
-        """生成n次对称群 S_n
-        
-        Args:
-            n: 对称群的次数
-            
-        Returns:
-            n次对称群
-        """
-        from .specific_group import SymmetricGroup
-        return SymmetricGroup(n)
-    
-    @staticmethod
-    def dihedral_group(n: int) -> 'Group':
-        """生成2n阶二面体群 D_n
-        
-        Args:
-            n: 正多边形的边数
-            
-        Returns:
-            2n阶二面体群
-        """
-        from .specific_group import DihedralGroup
-        return DihedralGroup(n)
-    
-    @staticmethod
-    def quaternion_group() -> 'Group':
-        """生成四元数群 Q_8
-        
-        Returns:
-            8阶四元数群
-        """
-        from .specific_group import QuaternionGroup
-        return QuaternionGroup()
-    
-    @staticmethod
-    def klein_four_group() -> Group[int]:
-        """生成克莱因四元群 V_4
-        
-        Returns:
-            克莱因四元群
-        """
-        from .specific_group import KleinGroup
-        return KleinGroup()
-    
-    @staticmethod
-    def alternating_group(n: int) -> Group[Tuple[int, ...]]:
-        """生成n次交错群 A_n
-        
-        Args:
-            n: 交错群的次数
-            
-        Returns:
-            n次交错群
-        """
-        from .specific_group import AlternatingGroup
-        return AlternatingGroup(n)

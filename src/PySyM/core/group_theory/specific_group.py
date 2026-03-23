@@ -1,9 +1,12 @@
 from typing import List, Tuple
+from itertools import permutations
 from .abstract_group import Group
 
 class CyclicGroup(Group[int]):
     """循环群"""
     def __init__(self, n: int):
+        if n <= 0:
+            raise ValueError(f"循环群的阶必须为正整数， got {n}")
         super().__init__(f"C_{n}")
         self.n = n
     
@@ -28,10 +31,14 @@ class CyclicGroup(Group[int]):
 class SymmetricGroup(Group[Tuple[int, ...]]):
     """对称群"""
     def __init__(self, n: int):
+        if n < 0:
+            raise ValueError(f"对称群的次数必须为非负整数， got {n}")
+        if n > 8:
+            raise ValueError(f"对称群 S_{n} 太大，无法生成所有元素。最大支持 n=8")
         super().__init__(f"S_{n}")
         self.n = n
-        # 生成所有置换
-        self._elements = self._generate_permutations(list(range(n)))
+        # 延迟生成元素，只有在需要时才生成
+        self._elements = None
     
     def _generate_permutations(self, elements: List) -> List[Tuple[int, ...]]:
         if len(elements) <= 1:
@@ -43,6 +50,11 @@ class SymmetricGroup(Group[Tuple[int, ...]]):
             for perm in self._generate_permutations(remaining):
                 permutations.append((first,) + perm)
         return permutations
+    
+    def _ensure_elements_generated(self):
+        """确保元素已生成"""
+        if self._elements is None:
+            self._elements = self._generate_permutations(list(range(self.n)))
     
     def identity(self) -> Tuple[int, ...]:
         return tuple(range(self.n))
@@ -66,14 +78,34 @@ class SymmetricGroup(Group[Tuple[int, ...]]):
         return set(element) == set(range(self.n))
     
     def order(self) -> int:
+        self._ensure_elements_generated()
         return len(self._elements)
     
     def elements(self) -> List[Tuple[int, ...]]:
+        self._ensure_elements_generated()
         return self._elements
+    
+    def alternating_group(self) -> 'AlternatingGroup':
+        """返回交错群 A_n"""
+        return AlternatingGroup(self.n)
+    
+    def is_simple(self) -> bool:
+        """检查是否为单群
+        
+        对称群 S_n 只有在 n >= 5 时，其交错子群 A_n 才是单群。
+        S_n 本身（n >= 2）都有非平凡正规子群 A_n，所以不是单群。
+        """
+        # S_n 本身永远不是单群（当 n >= 2 时，A_n 是非平凡正规子群）
+        if self.n >= 2:
+            return False
+        # S_1 是平凡群，也不是单群
+        return False
 
 class DihedralGroup(Group[Tuple[int, int]]):
     """二面群"""
     def __init__(self, n: int):
+        if n <= 0:
+            raise ValueError(f"二面群的边数必须为正整数， got {n}")
         super().__init__(f"D_{n}")
         self.n = n
         # 生成所有元素：(0, k) 表示旋转 k 步，(1, k) 表示翻转后旋转 k 步
@@ -172,7 +204,7 @@ class QuaternionGroup(Group[str]):
     def order(self) -> int:
         return 8
     
-    def elements(self) -> list[str]:
+    def elements(self) -> List[str]:
         return self._elements
 
 class KleinGroup(Group[tuple[int, int]]):
@@ -201,20 +233,29 @@ class KleinGroup(Group[tuple[int, int]]):
     def order(self) -> int:
         return 4
     
-    def elements(self) -> list[tuple[int, int]]:
+    def elements(self) -> List[Tuple[int, int]]:
         return self._elements
 
-class AlternatingGroup(Group[tuple[int, ...]]):
+class AlternatingGroup(Group[Tuple[int, ...]]):
     """交替群"""
     def __init__(self, n: int):
+        if n < 0:
+            raise ValueError(f"交错群的次数必须为非负整数， got {n}")
+        if n > 8:
+            raise ValueError(f"交错群 A_{n} 太大，无法生成所有元素。最大支持 n=8")
         super().__init__(f"A_{n}")
         self.n = n
-        # 生成所有偶置换
-        self._elements = []
-        from itertools import permutations
-        for perm in permutations(range(n)):
-            if self._is_even_permutation(perm):
-                self._elements.append(perm)
+        # 延迟生成元素，只有在需要时才生成
+        self._elements = None
+    
+    def _ensure_elements_generated(self):
+        """确保元素已生成"""
+        if self._elements is None:
+            # 生成所有偶置换
+            self._elements = []
+            for perm in permutations(range(self.n)):
+                if self._is_even_permutation(perm):
+                    self._elements.append(perm)
     
     def _is_even_permutation(self, perm: tuple[int, ...]) -> bool:
         # 计算置换的逆序数
@@ -249,9 +290,11 @@ class AlternatingGroup(Group[tuple[int, ...]]):
         return self._is_even_permutation(element)
     
     def order(self) -> int:
+        self._ensure_elements_generated()
         return len(self._elements)
     
-    def elements(self) -> list[tuple[int, ...]]:
+    def elements(self) -> List[Tuple[int, ...]]:
+        self._ensure_elements_generated()
         return self._elements
 
 
