@@ -7,9 +7,10 @@ from ..matrix_groups.base import MatrixGroup, MatrixGroupElement
 T = TypeVar('T', bound=GroupElement)
 
 class GroupRepresentation(ABC, Generic[T]):
-    """群表示抽象基类
-    
-    群表示是群G到某个向量空间V的自同构群GL(V)的同态
+    """群表示抽象基类。
+
+    数学上为群同态 ``ρ: G → GL(V)``。本库约定 **ρ(ab) = ρ(a)ρ(b)**（矩阵乘），
+    与具体群实现中 ``multiply(a,b)`` 的含义一致；上层物理模块构造拉格朗日量或荷载表示时请保持同一约定。
     """
     
     def __init__(self, group: Group[T], dimension: int):

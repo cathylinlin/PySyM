@@ -4,7 +4,16 @@ from .abstract_representation import GroupRepresentation
 from .character import Character
 from .matrix_representation import MatrixRepresentation
 from ..group_theory.abstract_group import Group, GroupElement
-from ..matrix_groups.general_linear import GLnElement
+# S3 在超平面 x+y+z=0 上的坐标置换表示；与 SymmetricGroup.multiply（先右后左）一致，满足 ρ(ab)=ρ(a)ρ(b)。
+_S3_2D_IRREP: Dict[Tuple[int, ...], np.ndarray] = {
+    (0, 1, 2): np.array([[1.0, 0.0], [0.0, 1.0]], dtype=complex),
+    (0, 2, 1): np.array([[0.5, 1.5], [0.5, -0.5]], dtype=complex),
+    (1, 0, 2): np.array([[-1.0, 0.0], [0.0, 1.0]], dtype=complex),
+    (1, 2, 0): np.array([[-0.5, -1.5], [0.5, -0.5]], dtype=complex),
+    (2, 0, 1): np.array([[-0.5, 1.5], [-0.5, -0.5]], dtype=complex),
+    (2, 1, 0): np.array([[0.5, -1.5], [-0.5, -0.5]], dtype=complex),
+}
+
 
 class IrreducibleRepresentationFinder:
     """不可约表示查找器"""
@@ -45,21 +54,7 @@ class IrreducibleRepresentationFinder:
                     sign_mapping[g] = np.array([[-1]])
             sign_rep = MatrixRepresentation(group, sign_mapping)
             
-            # 构造二维不可约表示
-            two_dim_mapping = {}
-            for g in elements:
-                if g == (0, 1, 2):  # 单位元
-                    two_dim_mapping[g] = np.array([[1, 0], [0, 1]])
-                elif g == (0, 2, 1):  # 对换
-                    two_dim_mapping[g] = np.array([[-1, -1], [0, 1]])
-                elif g == (1, 0, 2):  # 对换
-                    two_dim_mapping[g] = np.array([[1, 0], [-1, -1]])
-                elif g == (1, 2, 0):  # 3-循环
-                    two_dim_mapping[g] = np.array([[0, -1], [1, -1]])
-                elif g == (2, 0, 1):  # 3-循环
-                    two_dim_mapping[g] = np.array([[-1, 1], [-1, 0]])
-                elif g == (2, 1, 0):  # 对换
-                    two_dim_mapping[g] = np.array([[0, 1], [1, 0]])
+            two_dim_mapping = {g: _S3_2D_IRREP[g].copy() for g in elements}
             two_dim_rep = MatrixRepresentation(group, two_dim_mapping)
             
             return [trivial_rep, sign_rep, two_dim_rep]
@@ -119,21 +114,7 @@ class IrreducibleRepresentationFinder:
                     sign_mapping[g] = np.array([[-1]])
             sign_rep = MatrixRepresentation(group, sign_mapping)
             
-            # 构造二维不可约表示
-            two_dim_mapping = {}
-            for g in elements:
-                if g == (0, 1, 2):  # 单位元
-                    two_dim_mapping[g] = np.array([[1, 0], [0, 1]])
-                elif g == (0, 2, 1):  # 对换
-                    two_dim_mapping[g] = np.array([[-1, -1], [0, 1]])
-                elif g == (1, 0, 2):  # 对换
-                    two_dim_mapping[g] = np.array([[1, 0], [-1, -1]])
-                elif g == (1, 2, 0):  # 3-循环
-                    two_dim_mapping[g] = np.array([[0, -1], [1, -1]])
-                elif g == (2, 0, 1):  # 3-循环
-                    two_dim_mapping[g] = np.array([[-1, 1], [-1, 0]])
-                elif g == (2, 1, 0):  # 对换
-                    two_dim_mapping[g] = np.array([[0, 1], [1, 0]])
+            two_dim_mapping = {g: _S3_2D_IRREP[g].copy() for g in elements}
             two_dim_rep = MatrixRepresentation(group, two_dim_mapping)
             
             # 计算表示的特征标

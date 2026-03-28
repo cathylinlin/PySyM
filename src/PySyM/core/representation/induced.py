@@ -6,6 +6,22 @@ from ..matrix_groups.general_linear import GLnElement
 
 T = GroupElement
 
+
+def _carrier_groups_match(g_rep: Group, g_sub: Group) -> bool:
+    """子群在数学上一致时允许 `ρ.group` 与传入的 `subgroup` 非同一对象（如 Subgroup 与 AlternatingGroup）。"""
+    if g_rep is g_sub:
+        return True
+    try:
+        if g_rep.identity() != g_sub.identity():
+            return False
+        er, es = list(g_rep.elements()), list(g_sub.elements())
+        if len(er) != len(es):
+            return False
+        return set(er) == set(es)
+    except TypeError:
+        return False
+
+
 class InducedRepresentation(GroupRepresentation[T]):
     """诱导表示
     
@@ -20,8 +36,8 @@ class InducedRepresentation(GroupRepresentation[T]):
             subgroup: 子群 H
             subgroup_representation: 子群 H 的表示 ρ
         """
-        if subgroup_representation.group != subgroup:
-            raise ValueError("子表示必须定义在给定子群上")
+        if not _carrier_groups_match(subgroup_representation.group, subgroup):
+            raise ValueError("子表示必须定义在与传入子群载体相同的有限群上")
         for h in subgroup.elements():
             if h not in group:
                 raise ValueError("子群元素必须属于母群")

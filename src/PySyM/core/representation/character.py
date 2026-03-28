@@ -1,12 +1,11 @@
+"""类函数与特征标：``χ(g)=Tr ρ(g)``，有限群上内积 ``⟨χ₁,χ₂⟩=(1/|G|)∑_g χ₁(g)χ̄₂(g)``（与量子力学中不可约判据一致）。"""
 from typing import Dict, List
 import numpy as np
 from .abstract_representation import GroupRepresentation
 from ..group_theory.abstract_group import Group, GroupElement
 
 class Character:
-    """群表示的特征标
-    
-    特征标是表示的迹函数 χ(g) = Tr(ρ(g))
+    """群表示的特征标 ``χ(g) = Tr(ρ(g))``（对矩阵表示）。
     """
     
     def __init__(self, representation: GroupRepresentation):

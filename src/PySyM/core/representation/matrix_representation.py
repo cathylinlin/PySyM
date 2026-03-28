@@ -1,5 +1,10 @@
+"""矩阵群表示（有限群 → GL(n, ℂ)）。
+
+同态约定：对所有 ``a,b ∈ G`` 有 ``ρ(ab) = ρ(a) @ ρ(b)``（与 :meth:`~PySyM.core.group_theory.Group.multiply` 中
+「先右后左」的合成顺序一致）。正则表示在标准基 ``{e_h}`` 上满足 ``ρ(g) e_h = e_{gh}``。
+"""
 import numpy as np
-from typing import Dict,TypeVar, List
+from typing import Dict, TypeVar, List
 from .abstract_representation import GroupRepresentation
 from ..group_theory.abstract_group import Group, GroupElement
 from ..matrix_groups.general_linear import GLnElement
