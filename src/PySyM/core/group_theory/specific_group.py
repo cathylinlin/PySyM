@@ -29,7 +29,11 @@ class CyclicGroup(Group[int]):
         return list(range(self.n))
 
 class SymmetricGroup(Group[Tuple[int, ...]]):
-    """对称群"""
+    """对称群 ``S_n``（元素为 ``n`` 元置换的一行记号）。
+
+    乘法约定：``multiply(a, b)`` 为先施加 ``b`` 再施加 ``a``，即 ``(a∘b)(i)=a[b[i]]``，
+    与组合置换及「右到左」的记号一致，便于与矩阵表示 ``ρ(ab)=ρ(a)ρ(b)`` 直接衔接。
+    """
     def __init__(self, n: int):
         if n < 0:
             raise ValueError(f"对称群的次数必须为非负整数， got {n}")

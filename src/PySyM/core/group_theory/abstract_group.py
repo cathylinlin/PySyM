@@ -226,7 +226,7 @@ class Group(ABC, Generic[T]):
         """所有群元素（有限群）"""
         raise NotImplementedError("子类必须实现elements方法")
     
-    def generate_subgroup(self, generators: List[T]) -> 'Subgroup[T]':
+    def generate_subgroup(self, generators: List[T]) -> 'Subgroup[T]': # type: ignore
         """由生成元生成的子群
         
         Args:

@@ -45,7 +45,7 @@ class Subgroup(Group[T]):
         """检查是否为正规子群"""
         return self._parent.is_normal_subgroup(self)
     
-    def cosets_left(self) -> List['Coset[T]']:
+    def cosets_left(self) -> List['Coset[T]']: # type: ignore
         """计算左陪集"""
         global CosetSpace, Coset
         if CosetSpace is None or Coset is None:
@@ -53,7 +53,7 @@ class Subgroup(Group[T]):
         coset_space = CosetSpace(self._parent, self, is_left=True)
         return coset_space.cosets()
     
-    def cosets_right(self) -> List['Coset[T]']:
+    def cosets_right(self) -> List['Coset[T]']: # type: ignore
         """计算右陪集"""
         global CosetSpace, Coset
         if CosetSpace is None or Coset is None:
