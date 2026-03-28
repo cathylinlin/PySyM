@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from .abstract_algebra import Group, GroupElement, Monoid
 
 T = TypeVar('T')  # 环元素类型
+R1 = TypeVar('R1', bound='RingElement')  # 环元素类型，用于矩阵环
 
 
 class RingElement(GroupElement):
@@ -74,8 +75,9 @@ class Ring(Group[T], Monoid[T]):
         
         # 检查是否有零因子
         if not self.is_finite():
-            # 对于无限环，默认假设是整环
-            return True
+            # 对于无限环，需要具体判断，这里默认返回False
+            # 子类应该重写此方法来提供准确的判断
+            return False
         
         elements = self.elements()
         for a in elements:
@@ -188,6 +190,10 @@ class IntegerRing(Ring[IntegerRingElement]):
     
     def is_finite(self) -> bool:
         return False
+    
+    def is_integral_domain(self) -> bool:
+        """整数环是整环"""
+        return True
 
 
 @dataclass
@@ -312,3 +318,232 @@ class PolynomialRing(Ring[PolynomialRingElement]):
     
     def is_finite(self) -> bool:
         return False
+    
+    def is_integral_domain(self) -> bool:
+        """多项式环Z[x]是整环"""
+        return True
+
+
+@dataclass
+class MatrixRingElement(RingElement):
+    """矩阵环元素"""
+    entries: List[List[R1]]  # 矩阵元素，二维列表
+    ring: Ring[R1]  # 基础环
+    rows: int  # 行数
+    cols: int  # 列数
+    
+    def __post_init__(self):
+        # 验证矩阵维度
+        if len(self.entries) != self.rows:
+            raise ValueError(f"矩阵行数不匹配，期望{self.rows}行，实际{len(self.entries)}行")
+        for row in self.entries:
+            if len(row) != self.cols:
+                raise ValueError(f"矩阵列数不匹配，期望{self.cols}列，实际{len(row)}列")
+    
+    def __add__(self, other: 'MatrixRingElement') -> 'MatrixRingElement':
+        if self.rows != other.rows or self.cols != other.cols:
+            raise ValueError("矩阵维度不匹配，无法相加")
+        if self.ring != other.ring:
+            raise ValueError("基础环不匹配，无法相加")
+        
+        new_entries = []
+        for i in range(self.rows):
+            new_row = []
+            for j in range(self.cols):
+                new_entry = self.ring.add(self.entries[i][j], other.entries[i][j])
+                new_row.append(new_entry)
+            new_entries.append(new_row)
+        return MatrixRingElement(new_entries, self.ring, self.rows, self.cols)
+    
+    def __sub__(self, other: 'MatrixRingElement') -> 'MatrixRingElement':
+        if self.rows != other.rows or self.cols != other.cols:
+            raise ValueError("矩阵维度不匹配，无法相减")
+        if self.ring != other.ring:
+            raise ValueError("基础环不匹配，无法相减")
+        
+        new_entries = []
+        for i in range(self.rows):
+            new_row = []
+            for j in range(self.cols):
+                new_entry = self.ring.subtract(self.entries[i][j], other.entries[i][j])
+                new_row.append(new_entry)
+            new_entries.append(new_row)
+        return MatrixRingElement(new_entries, self.ring, self.rows, self.cols)
+    
+    def __mul__(self, other: 'MatrixRingElement') -> 'MatrixRingElement':
+        if self.cols != other.rows:
+            raise ValueError("矩阵维度不匹配，无法相乘")
+        if self.ring != other.ring:
+            raise ValueError("基础环不匹配，无法相乘")
+        
+        new_entries = []
+        for i in range(self.rows):
+            new_row = []
+            for j in range(other.cols):
+                entry = self.ring.zero()
+                for k in range(self.cols):
+                    entry = self.ring.add(entry, self.ring.multiply(self.entries[i][k], other.entries[k][j]))
+                new_row.append(entry)
+            new_entries.append(new_row)
+        return MatrixRingElement(new_entries, self.ring, self.rows, other.cols)
+    
+    def __pow__(self, n: int) -> 'MatrixRingElement':
+        if self.rows != self.cols:
+            raise ValueError("只有方阵才能进行幂运算")
+        
+        # 初始化为单位矩阵
+        result = MatrixRingElement([[self.ring.one() if i == j else self.ring.zero() for j in range(self.rows)] for i in range(self.rows)], 
+                                self.ring, self.rows, self.cols)
+        
+        if n == 0:
+            return result
+        
+        base = self
+        exponent = n
+        
+        if n < 0:
+            # 对于负幂次，需要求矩阵的逆
+            # 这里简化处理，实际实现中需要根据具体的环来计算逆矩阵
+            raise NotImplementedError("负幂次需要矩阵的逆，尚未实现")
+        
+        while exponent > 0:
+            if exponent % 2 == 1:
+                result = result * base
+            base = base * base
+            exponent //= 2
+        return result
+    
+    def inverse(self) -> 'MatrixRingElement':
+        # 加法逆元
+        new_entries = []
+        for row in self.entries:
+            new_row = [self.ring.inverse(entry) for entry in row]
+            new_entries.append(new_row)
+        return MatrixRingElement(new_entries, self.ring, self.rows, self.cols)
+    
+    def __hash__(self) -> int:
+        # 将矩阵转换为元组以计算哈希值
+        flat_entries = tuple(tuple(row) for row in self.entries)
+        return hash((flat_entries, self.ring, self.rows, self.cols))
+    
+    def is_identity(self) -> bool:
+        # 加法单位元（零矩阵）
+        for row in self.entries:
+            for entry in row:
+                if not entry.is_zero():
+                    return False
+        return True
+    
+    def is_zero(self) -> bool:
+        # 零矩阵
+        for row in self.entries:
+            for entry in row:
+                if not entry.is_zero():
+                    return False
+        return True
+    
+    def order(self) -> int:
+        # 矩阵的加法阶，只有零矩阵的阶是1
+        if self.is_zero():
+            return 1
+        return -1  # 无限阶
+    
+    def __str__(self) -> str:
+        if self.rows == 0 or self.cols == 0:
+            return "[]"
+        
+        # 计算每列的最大宽度
+        col_widths = [0] * self.cols
+        for row in self.entries:
+            for j, entry in enumerate(row):
+                col_widths[j] = max(col_widths[j], len(str(entry)))
+        
+        # 构建矩阵字符串
+        lines = []
+        for row in self.entries:
+            line = "[".ljust(2)
+            for j, entry in enumerate(row):
+                entry_str = str(entry)
+                line += entry_str.ljust(col_widths[j] + 2)
+            line += "]"
+            lines.append(line)
+        
+        return "\n".join(lines)
+
+
+class MatrixRing(Ring[MatrixRingElement]):
+    """矩阵环 M_n(R)，其中 R 是任意环"""
+    
+    def __init__(self, ring: Ring[R1], n: int, name: str = ""):
+        """
+        初始化矩阵环
+        
+        Args:
+            ring: 基础环
+            n: 矩阵的阶数（行数和列数）
+            name: 矩阵环的名称
+        """
+        super().__init__(name or f"Matrix Ring M_{n}({ring.name})")
+        self.ring = ring
+        self.n = n
+        self._is_commutative = ring.is_commutative() and n == 1  # 只有1x1矩阵环是交换的
+    
+    def add(self, a: MatrixRingElement, b: MatrixRingElement) -> MatrixRingElement:
+        return a + b
+    
+    def multiply(self, a: MatrixRingElement, b: MatrixRingElement) -> MatrixRingElement:
+        return a * b
+    
+    def inverse(self, a: MatrixRingElement) -> MatrixRingElement:
+        return a.inverse()
+    
+    def identity(self) -> MatrixRingElement:
+        # 加法单位元（零矩阵）
+        zero_entries = [[self.ring.zero() for _ in range(self.n)] for _ in range(self.n)]
+        return MatrixRingElement(zero_entries, self.ring, self.n, self.n)
+    
+    def zero(self) -> MatrixRingElement:
+        # 零元（零矩阵）
+        zero_entries = [[self.ring.zero() for _ in range(self.n)] for _ in range(self.n)]
+        return MatrixRingElement(zero_entries, self.ring, self.n, self.n)
+    
+    def one(self) -> MatrixRingElement:
+        # 乘法单位元（单位矩阵）
+        identity_entries = [[self.ring.one() if i == j else self.ring.zero() for j in range(self.n)] for i in range(self.n)]
+        return MatrixRingElement(identity_entries, self.ring, self.n, self.n)
+    
+    def __contains__(self, element: MatrixRingElement) -> bool:
+        return (isinstance(element, MatrixRingElement) and 
+                element.ring == self.ring and 
+                element.rows == self.n and 
+                element.cols == self.n)
+    
+    def order(self) -> int:
+        if self.ring.is_finite():
+            # 有限环上的矩阵环的阶是 |R|^(n^2)
+            ring_order = self.ring.order()
+            if ring_order > 0:
+                return ring_order ** (self.n ** 2)
+        return -1  # 无限环
+    
+    def elements(self) -> List[MatrixRingElement]:
+        if not self.ring.is_finite():
+            raise ValueError("基础环是无限的，无法列出所有矩阵元素")
+        
+        # 生成所有可能的矩阵元素
+        from itertools import product
+        ring_elements = self.ring.elements()
+        # 生成所有可能的行
+        row_product = product(ring_elements, repeat=self.n)
+        # 生成所有可能的矩阵
+        matrix_product = product(row_product, repeat=self.n)
+        
+        elements = []
+        for matrix_tuple in matrix_product:
+            entries = [list(row) for row in matrix_tuple]
+            elements.append(MatrixRingElement(entries, self.ring, self.n, self.n))
+        
+        return elements
+    
+    def is_finite(self) -> bool:
+        return self.ring.is_finite()

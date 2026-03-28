@@ -233,9 +233,15 @@ class ModuleHomomorphism(ABC, Generic[M1, M2, R1]):
         pass
     
     def is_homomorphism(self) -> bool:
-        """检查是否为模同态"""
-        # 对于模同态，默认假设是同态
+        """检查是否为群同态"""
+        # 对于群同态，默认假设是同态
         return True
+    
+    def is_isomorphism(self) -> bool:
+        """检查是否为群同构"""
+        # 实际实现中需要检查是否为双射
+        # 简化处理，默认返回False
+        return False
 
 
 class VectorSpaceHomomorphism(ModuleHomomorphism[M1, M2, F1]):
@@ -252,6 +258,69 @@ class VectorSpaceHomomorphism(ModuleHomomorphism[M1, M2, F1]):
         super().__init__(domain, codomain)
         self.domain = domain
         self.codomain = codomain
+
+
+class Isomorphism:
+    """同构类，作为同态的特殊情况"""
+    
+    def __init__(self, homomorphism):
+        """
+        初始化同构
+        
+        Args:
+            homomorphism: 同态映射，必须是双射
+        """
+        self.homomorphism = homomorphism
+        self.domain = homomorphism.domain
+        self.codomain = homomorphism.codomain
+        
+        # 验证是否为同构
+        if not self.is_isomorphism():
+            raise ValueError("同态映射不是双射，无法构造同构")
+    
+    def __call__(self, element):
+        """应用同构映射"""
+        return self.homomorphism(element)
+    
+    def inverse(self):
+        """返回同构的逆映射"""
+        # 实际实现中需要根据具体的同态类型实现逆映射
+        raise NotImplementedError("同构逆映射尚未实现")
+    
+    def is_isomorphism(self):
+        """检查是否为同构"""
+        return self.homomorphism.is_isomorphism()
+    
+    def __str__(self):
+        """同构的字符串表示"""
+        return f"Isomorphism from {self.domain.name} to {self.codomain.name}"
+
+
+class Automorphism(Isomorphism):
+    """自同构类，定义域和陪域相同的同构"""
+    
+    def __init__(self, endomorphism):
+        """
+        初始化自同构
+        
+        Args:
+            endomorphism: 自同态映射，必须是同构
+        """
+        if endomorphism.domain != endomorphism.codomain:
+            raise ValueError("自同构的定义域和陪域必须相同")
+        super().__init__(endomorphism)
+        self.space = self.domain
+    
+    def compose(self, other: 'Automorphism'):
+        """自同构复合"""
+        if self.space != other.space:
+            raise ValueError("自同构必须作用于相同的空间")
+        # 实际实现中需要根据具体的同态类型实现复合
+        raise NotImplementedError("自同构复合尚未实现")
+    
+    def __str__(self):
+        """自同构的字符串表示"""
+        return f"Automorphism of {self.space.name}"
 
 
 # 代数结构构造函数
@@ -273,8 +342,24 @@ def direct_sum_groups(groups: List[Group[G]]) -> Group[Tuple[G, ...]]:
             return DirectSumGroupElement(new_elements)
         
         def __pow__(self, n: int) -> 'DirectSumGroupElement':
-            new_elements = tuple(groups[i].multiply(a, a) for i, a in enumerate(self.elements))
-            return DirectSumGroupElement(new_elements)
+            if n == 0:
+                # 单位元的0次幂是单位元
+                identities = tuple(g.identity() for g in groups)
+                return DirectSumGroupElement(identities)
+            elif n < 0:
+                # 负次幂是逆元的正次幂
+                inverse = self.inverse()
+                return inverse ** (-n)
+            
+            # 正次幂
+            result = DirectSumGroupElement(tuple(g.identity() for g in groups))
+            base = self
+            while n > 0:
+                if n % 2 == 1:
+                    result = result * base
+                base = base * base
+                n //= 2
+            return result
         
         def inverse(self) -> 'DirectSumGroupElement':
             new_elements = tuple(groups[i].inverse(a) for i, a in enumerate(self.elements))
@@ -340,6 +425,8 @@ def polynomial_ring(ring: Ring[R1]) -> Ring:
     Returns:
         多项式环 R[x]
     """
+    # 这里简化处理，实际实现中需要根据基础环构造对应的多项式环
+    # 目前返回的是Z[x]，需要根据基础环进行调整
     from .ring import PolynomialRing
     return PolynomialRing()
 

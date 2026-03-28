@@ -18,7 +18,9 @@ from .ring import (
     IntegerRingElement,
     IntegerRing,
     PolynomialRingElement,
-    PolynomialRing
+    PolynomialRing,
+    MatrixRingElement,
+    MatrixRing
 )
 
 # 域论
@@ -30,7 +32,11 @@ from .field import (
     RealFieldElement,
     RealField,
     FiniteFieldElement,
-    FiniteField
+    FiniteField,
+    ComplexFieldElement,
+    ComplexField,
+    ExtendedFiniteFieldElement,
+    ExtendedFiniteField
 )
 
 # 模论和向量空间
@@ -40,7 +46,10 @@ from .module import (
     VectorSpaceElement,
     VectorSpace,
     FiniteDimensionalVectorSpaceElement,
-    FiniteDimensionalVectorSpace
+    FiniteDimensionalVectorSpace,
+    LinearTransformation,
+    TensorProductElement,
+    TensorProduct
 )
 
 # 代数结构之间的关系和转换
@@ -50,6 +59,8 @@ from .algebraic_relations import (
     FieldHomomorphism,
     ModuleHomomorphism,
     VectorSpaceHomomorphism,
+    Isomorphism,
+    Automorphism,
     direct_sum_groups,
     polynomial_ring,
     finite_field,
@@ -73,6 +84,8 @@ __all__ = [
     'IntegerRing',
     'PolynomialRingElement',
     'PolynomialRing',
+    'MatrixRingElement',
+    'MatrixRing',
     
     # 域论
     'FieldElement',
@@ -83,6 +96,10 @@ __all__ = [
     'RealField',
     'FiniteFieldElement',
     'FiniteField',
+    'ComplexFieldElement',
+    'ComplexField',
+    'ExtendedFiniteFieldElement',
+    'ExtendedFiniteField',
     
     # 模论和向量空间
     'ModuleElement',
@@ -91,6 +108,9 @@ __all__ = [
     'VectorSpace',
     'FiniteDimensionalVectorSpaceElement',
     'FiniteDimensionalVectorSpace',
+    'LinearTransformation',
+    'TensorProductElement',
+    'TensorProduct',
     
     # 代数结构之间的关系和转换
     'GroupHomomorphism',
@@ -98,6 +118,8 @@ __all__ = [
     'FieldHomomorphism',
     'ModuleHomomorphism',
     'VectorSpaceHomomorphism',
+    'Isomorphism',
+    'Automorphism',
     'direct_sum_groups',
     'polynomial_ring',
     'finite_field',

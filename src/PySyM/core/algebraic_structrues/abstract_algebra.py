@@ -28,13 +28,20 @@ class SemigroupElement(ABC):
         pass
     
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, SemigroupElement):
+        # 默认情况下尽量做结构性相等比较，避免仅靠 hash() 可能出现的碰撞。
+        # 如果子类已经实现了 __eq__，这里通常不会被调用（会被子类覆盖）。
+        if type(self) is not type(other):
             return NotImplemented
+        if hasattr(self, "__dict__") and hasattr(other, "__dict__"):
+            return self.__dict__ == other.__dict__
         return hash(self) == hash(other)
 
 
 class Semigroup(ABC, Generic[T]):
-    """半群抽象基类"""
+    """半群抽象基类
+    
+    半群是一个带有结合二元运算的集合。
+    """
     
     def __init__(self, name: str = ""):
         """
@@ -62,9 +69,8 @@ class Semigroup(ABC, Generic[T]):
         if self._properties and self._properties.is_finite is not None:
             return self._properties.is_finite
         
-        # 默认假设有限，除非有特殊说明
-        self._update_properties()
-        return True
+        # 子类应该重写此方法来提供准确的判断
+        raise NotImplementedError("子类必须实现is_finite方法")
     
     def order(self) -> Optional[int]:
         """半群的阶（无限半群返回None）"""
@@ -96,7 +102,10 @@ class MonoidElement(SemigroupElement):
 
 
 class Monoid(Semigroup[T]):
-    """幺半群抽象基类"""
+    """幺半群抽象基类
+    
+    幺半群是一个带有单位元的半群。
+    """
     
     @abstractmethod
     def identity(self) -> T:
@@ -104,7 +113,16 @@ class Monoid(Semigroup[T]):
         pass
     
     def is_idempotent(self, element: T) -> bool:
-        """检查元素是否为幂等元"""
+        """检查元素是否为幂等元
+        
+        幂等元是指满足 a * a = a 的元素。
+        
+        Args:
+            element: 要检查的元素
+            
+        Returns:
+            如果元素是幂等元，返回True，否则返回False
+        """
         return self.multiply(element, element) == element
 
 
@@ -128,23 +146,48 @@ class GroupElement(MonoidElement):
     
     def __truediv__(self, other: 'GroupElement') -> 'GroupElement':
         """a/b = a * b^(-1)"""
+        if not isinstance(other, GroupElement):
+            return NotImplemented
         return self * other.inverse()
 
 
 class Group(Monoid[T]):
-    """群抽象基类"""
+    """群抽象基类
+    
+    群是一个带有逆元的幺半群。
+    """
     
     @abstractmethod
     def inverse(self, a: T) -> T:
-        """逆元"""
+        """逆元
+        
+        返回元素的逆元。
+        
+        Args:
+            a: 要计算逆元的元素
+            
+        Returns:
+            元素的逆元
+        """
         pass
     
     @abstractmethod
     def order(self) -> int:
-        """群的阶（无限群返回-1）"""
+        """群的阶（无限群返回-1）
+        
+        Returns:
+            群的阶数，无限群返回-1
+        """
         pass
     
     @abstractmethod
     def elements(self) -> List[T]:
-        """所有群元素（有限群）"""
+        """所有群元素（有限群）
+        
+        Returns:
+            有限群的所有元素列表
+            
+        Raises:
+            NotImplementedError: 如果群是无限的
+        """
         raise NotImplementedError("子类必须实现elements方法")
