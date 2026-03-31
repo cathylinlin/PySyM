@@ -1,0 +1,15 @@
+{
+    "Codegeex.RepoIndex": true,
+    "Codegeex.Chat.fontSize": 20,
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        "./tests",
+        "-p",
+        "*test*.py"
+    ],
+    "python.testing.pytestEnabled": false,
+    "python.testing.unittestEnabled": true,
+    "editor.fontSize": 15,
+    "files.autoSave": "onWindowChange"
+}
