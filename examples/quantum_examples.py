@@ -1,7 +1,7 @@
 """
 量子系统示例脚本
 
-展示 PySyM 量子模块的经典场景模拟功能。
+展示 PySymmetry 量子模块的经典场景模拟功能。
 
 运行方式:
     python examples/quantum_examples.py
@@ -18,7 +18,7 @@ import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from PySyM.phys.quantum import *
+from PySymmetry.phys.quantum import *
 
 
 def print_header(title):
@@ -402,8 +402,8 @@ def run_all_examples():
     print()
     print("#" * 70)
     print("#" + " " * 68 + "#")
-    print("#" + "  PySyM 量子物理模块 - 经典场景演示  ".center(68) + "#")
-    print("#" + "  PySyM Quantum Module - Classical Scenarios Demo  ".center(68) + "#")
+    print("#" + "  PySymmetry 量子物理模块 - 经典场景演示  ".center(68) + "#")
+    print("#" + "  PySymmetry Quantum Module - Classical Scenarios Demo  ".center(68) + "#")
     print("#" + " " * 68 + "#")
     print("#" * 70)
     

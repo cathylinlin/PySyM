@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "PySyM"
+name = "PySymmetry"
 version = "1.0.0"
 description = "Python library for symmetry, group theory, and quantum physics applications"
 readme = "README.md"
@@ -52,14 +52,14 @@ visualization = [
     "matplotlib>=3.7",
 ]
 all = [
-    "pysym[dev,symbolic,crystallography,visualization]",
+    "PySymmetry[dev,symbolic,crystallography,visualization]",
 ]
 
 [project.urls]
-Homepage = "https://github.com/cathylinlin/PySyM"
-Documentation = "https://github.com/cathylinlin/PySyM#readme"
-Repository = "https://github.com/cathylinlin/PySyM"
-Issues = "https://github.com/cathylinlin/PySyM/issues"
+Homepage = "https://github.com/cathylinlin/PySymmetry"
+Documentation = "https://github.com/cathylinlin/PySymmetry#readme"
+Repository = "https://github.com/cathylinlin/PySymmetry"
+Issues = "https://github.com/cathylinlin/PySymmetry/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]

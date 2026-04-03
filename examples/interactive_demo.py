@@ -7,7 +7,7 @@ Run with:
     python examples/interactive_demo.py
 """
 import numpy as np
-from PySyM.phys.quantum import *
+from PySymmetry.phys.quantum import *
 
 
 def print_header(title):
@@ -266,7 +266,7 @@ def run_all():
     print()
     print("#" * 70)
     print("#" + " " * 68 + "#")
-    print("#" + "  PySyM Universal Quantum Simulator  ".center(68) + "#")
+    print("#" + "  PySymmetry Universal Quantum Simulator  ".center(68) + "#")
     print("#" + "  Arbitrary Scenario Demo  ".center(68) + "#")
     print("#" + " " * 68 + "#")
     print("#" * 70)

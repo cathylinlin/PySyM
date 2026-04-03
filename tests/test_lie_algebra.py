@@ -8,10 +8,10 @@ import unittest
 import numpy as np
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
 
-from PySyM.core.lie_theory.lie_algebra_factory import LieAlgebraFactory
-from PySyM.core.lie_theory.lie_algebra_representation import AdjointRepresentation, FundamentalRepresentation
-from PySyM.core.lie_theory.lie_algebra_structure import KillingForm
-from PySyM.core.lie_theory.lie_algebra_operations import StandardLieBracket
+from PySymmetry.core.lie_theory.lie_algebra_factory import LieAlgebraFactory
+from PySymmetry.core.lie_theory.lie_algebra_representation import AdjointRepresentation, FundamentalRepresentation
+from PySymmetry.core.lie_theory.lie_algebra_structure import KillingForm
+from PySymmetry.core.lie_theory.lie_algebra_operations import StandardLieBracket
 
 
 class TestLieAlgebra(unittest.TestCase):

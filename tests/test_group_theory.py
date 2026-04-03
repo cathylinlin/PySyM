@@ -6,7 +6,7 @@ import os
 # 添加 src 目录到 Python 路径
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
 
-from PySyM.core.group_theory import (
+from PySymmetry.core.group_theory import (
     GroupFactory, Subgroup, Coset, CosetSpace, QuotientGroup
 )
 

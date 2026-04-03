@@ -6,7 +6,7 @@ import os
 # 添加src目录到Python路径
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
 
-from PySyM.core.algebraic_structures import (
+from PySymmetry.core.algebraic_structures import (
     IntegerRing, IntegerRingElement,
     RationalField, RationalFieldElement,
     RealField, RealFieldElement,

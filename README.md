@@ -1,6 +1,6 @@
-# PySyM - Python Symmetry
+# PySymmetry - Python Symmetry
 
-PySyM (Python Symmetry) is a comprehensive Python library for describing symmetries and their applications in physics.
+PySymmetry (Python Symmetry) is a comprehensive Python library for describing symmetries and their applications in physics.
 
 ## Features
 
@@ -31,7 +31,7 @@ Framework for physical symmetries:
 ## Installation
 
 ```bash
-pip install PySyM
+pip install PySymmetry
 ```
 
 ## Quick Start
@@ -39,7 +39,7 @@ pip install PySyM
 ### Quantum Simulation
 
 ```python
-from PySyM.phys.quantum import SceneBuilder, simulate, QuantumAnalyzer
+from PySymmetry.phys.quantum import SceneBuilder, simulate, QuantumAnalyzer
 
 # Create a harmonic oscillator
 scene = (SceneBuilder("Harmonic Oscillator")
@@ -60,7 +60,7 @@ print(analyzer.generate_report())
 ### Symmetry Analysis
 
 ```python
-from PySyM.phys.quantum import analyze, quick_report
+from PySymmetry.phys.quantum import analyze, quick_report
 
 # Full analysis
 result = analyze(hamiltonian, simulation_result)
@@ -80,9 +80,9 @@ See `examples/` directory:
 ## Project Structure
 
 ```
-PySyM/
+PySymmetry/
 ├── src/
-│   └── PySyM/
+│   └── PySymmetry/
 │       ├── core/                    # Core mathematics
 │       │   ├── algebraic_structures/
 │       │   ├── group_theory/
@@ -148,7 +148,7 @@ MIT License - see [LICENSE](LICENSE)
 
 LDK (Cathylinlin)
 - Email: bluejam001@163.com
-- GitHub: https://github.com/cathylinlin/PySyM
+- GitHub: https://github.com/cathylinlin/PySymmetry
 
 ---
 

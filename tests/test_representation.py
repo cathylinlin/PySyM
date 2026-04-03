@@ -3,13 +3,13 @@ import unittest
 
 import numpy as np
 
-from PySyM.core.group_theory import (
+from PySymmetry.core.group_theory import (
     AlternatingGroup,
     CyclicGroup,
     Subgroup,
     SymmetricGroup,
 )
-from PySyM.core.representation import (
+from PySymmetry.core.representation import (
     Character,
     InducedRepresentation,
     IrreducibleRepresentationFinder,

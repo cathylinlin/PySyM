@@ -12,7 +12,7 @@ Run with:
     python examples/symmetry_demo.py
 """
 import numpy as np
-from PySyM.phys.quantum import *
+from PySymmetry.phys.quantum import *
 
 
 def print_header(title):

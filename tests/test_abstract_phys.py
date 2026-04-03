@@ -6,7 +6,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
 
 import numpy as np
-from PySyM.abstract_phys.physical_objects import (
+from PySymmetry.abstract_phys.physical_objects import (
     PhysicalObject,
     PhysicalSpace,
     ElementaryParticle,
@@ -15,7 +15,7 @@ from PySyM.abstract_phys.physical_objects import (
     ScalarField,
     VectorField,
 )
-from PySyM.abstract_phys.symmetry_operations import (
+from PySymmetry.abstract_phys.symmetry_operations import (
     IdentityOperation,
     TranslationOperation,
     RotationOperation,

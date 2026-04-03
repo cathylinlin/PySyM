@@ -2,16 +2,16 @@
 
 import pytest
 import numpy as np
-from PySyM.core.group_theory.continuous_groups import TranslationGroup, RotationGroup, TimeTranslationGroup
-from PySyM.core.group_theory.discrete_groups import ParityGroup, TimeReversalGroup
-from PySyM.abstract_phys.symmetry_operations.generators import (
+from PySymmetry.core.group_theory.continuous_groups import TranslationGroup, RotationGroup, TimeTranslationGroup
+from PySymmetry.core.group_theory.discrete_groups import ParityGroup, TimeReversalGroup
+from PySymmetry.abstract_phys.symmetry_operations.generators import (
     MomentumGenerator,
     AngularMomentumGenerator,
     HamiltonianGenerator,
     ParityOperator,
     TimeReversalOperator
 )
-from PySyM.abstract_phys.symmetry_environments.gauge_groups import GaugeGroupFactory
+from PySymmetry.abstract_phys.symmetry_environments.gauge_groups import GaugeGroupFactory
 
 
 class TestContinuousGroups:

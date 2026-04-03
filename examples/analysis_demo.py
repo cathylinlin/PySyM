@@ -12,7 +12,7 @@ Run with:
     python examples/analysis_demo.py
 """
 import numpy as np
-from PySyM.phys.quantum import (
+from PySymmetry.phys.quantum import (
     SceneBuilder, simulate, SimulationResult,
     QuantumAnalyzer, analyze, quick_report,
     QuantumParityOperation, QuantumTranslationOperation,
