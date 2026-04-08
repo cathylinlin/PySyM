@@ -513,3 +513,165 @@ class SpecialUnitaryLieAlgebra(MatrixLieAlgebraBase):
 
     def __str__(self) -> str:
         return f"su({self.n})"
+
+
+class SO4LieAlgebra(MatrixLieAlgebraBase):
+    """SO(4) 李代数
+    
+    so(4) ≅ so(3) ⊕ so(3)，是半单李代数，由6个生成元组成：
+    - L_i (i=1,2,3): 角动量算符，对应so(3)的生成元
+    - A_i (i=1,2,3): Runge-Lenz向量算符
+    
+    对易关系：
+    - [L_i, L_j] = iε_ijk L_k
+    - [L_i, A_j] = iε_ijk A_k
+    - [A_i, A_j] = iε_ijk L_k
+    
+    Casimir不变量：C_L = L·L, C_A = A·A, C_total = L·L + A·A
+    
+    在氢原子中，L² + A² = n² - 1（原子单位）
+    """
+
+    def __init__(self):
+        self.n = 4
+        super().__init__(6)
+
+    def _matrix_shape(self) -> Tuple[int, int]:
+        return (4, 4)
+
+    def _dtype(self) -> np.dtype:
+        return np.complex128
+
+    def basis(self) -> List[MatrixLieAlgebraElement]:
+        mats: List[MatrixLieAlgebraElement] = []
+        for i in range(4):
+            for j in range(i + 1, 4):
+                e = np.zeros((4, 4), dtype=np.complex128)
+                e[i, j] = 1.0
+                e[j, i] = -1.0
+                mats.append(MatrixLieAlgebraElement(e, self))
+        return mats
+
+    def _levi_civita(self, i: int, j: int, k: int) -> float:
+        if (i, j, k) in [(0, 1, 2), (1, 2, 0), (2, 0, 1)]:
+            return 1.0
+        if (i, j, k) in [(0, 2, 1), (2, 1, 0), (1, 0, 2)]:
+            return -1.0
+        return 0.0
+
+    def check_bracket_relations(self, verbose: bool = False) -> bool:
+        gens = self.basis()
+        gens_dict = {f'T{i}{j}': gens[k] for k, (i, j) in enumerate(
+            [(i, j) for i in range(4) for j in range(i + 1, 4)])}
+        
+        indices = [(i, j) for i in range(4) for j in range(i + 1, 4)]
+        
+        for a, (ia, ja) in enumerate(indices):
+            for b, (ib, jb) in enumerate(indices):
+                if a >= b:
+                    continue
+                    
+                expected = np.zeros((4, 4), dtype=np.complex128)
+                for c, (ic, jc) in enumerate(indices):
+                    f_abc = self._levi_civita(ia, ja, ic) * (1 if ja == ib else -1 if ja == jb else 0)
+                    f_abc += self._levi_civita(ia, ja, jc) * (-1 if ja == ib else 1 if ja == jb else 0)
+                    f_abc += self._levi_civita(ib, jb, ic) * (1 if jb == ia else -1 if jb == ja else 0)
+                    f_abc += self._levi_civita(ib, jb, jc) * (-1 if jb == ia else 1 if jb == ja else 0)
+                    if abs(f_abc) > 0.1:
+                        expected += f_abc * gens[c].matrix
+                
+                computed = gens[a].matrix @ gens[b].matrix - gens[b].matrix @ gens[a].matrix
+                
+                if not np.allclose(computed, expected, atol=1e-10):
+                    if verbose:
+                        print(f"Bracket [{a},{b}] mismatch")
+                    return False
+        return True
+
+    def properties(self) -> LieAlgebraProperties:
+        return LieAlgebraProperties(
+            name="so(4)",
+            dimension=self.dimension,
+            is_semisimple=True,
+            is_simple=False,
+            is_abelian=False,
+            root_system_type="D2",
+            rank=2,
+        )
+
+    def __str__(self) -> str:
+        return "so(4)"
+
+
+class SO31LieAlgebra(MatrixLieAlgebraBase):
+    """SO(3) ⊂ SO(4) 李代数（第一分量）
+    
+    只包含L_i生成元的so(3)子代数。
+    """
+
+    def __init__(self):
+        super().__init__(3)
+
+    def _matrix_shape(self) -> Tuple[int, int]:
+        return (3, 3)
+
+    def basis(self) -> List[MatrixLieAlgebraElement]:
+        mats: List[MatrixLieAlgebraElement] = []
+        for i in range(3):
+            for j in range(i + 1, 3):
+                e = np.zeros((3, 3))
+                e[i, j] = 1.0
+                e[j, i] = -1.0
+                mats.append(MatrixLieAlgebraElement(e, self))
+        return mats
+
+    def properties(self) -> LieAlgebraProperties:
+        return LieAlgebraProperties(
+            name="so(3)",
+            dimension=self.dimension,
+            is_semisimple=True,
+            is_simple=True,
+            is_abelian=False,
+            root_system_type="B1",
+            rank=1,
+        )
+
+    def __str__(self) -> str:
+        return "so(3)"
+
+
+class SO32LieAlgebra(MatrixLieAlgebraBase):
+    """SO(3) ⊂ SO(4) 李代数（第二分量）
+    
+    只包含A_i生成元的so(3)子代数。
+    """
+
+    def __init__(self):
+        super().__init__(3)
+
+    def _matrix_shape(self) -> Tuple[int, int]:
+        return (3, 3)
+
+    def basis(self) -> List[MatrixLieAlgebraElement]:
+        mats: List[MatrixLieAlgebraElement] = []
+        for i in range(3):
+            for j in range(i + 1, 3):
+                e = np.zeros((3, 3))
+                e[i, j] = 1.0
+                e[j, i] = -1.0
+                mats.append(MatrixLieAlgebraElement(e, self))
+        return mats
+
+    def properties(self) -> LieAlgebraProperties:
+        return LieAlgebraProperties(
+            name="so'(3)",
+            dimension=self.dimension,
+            is_semisimple=True,
+            is_simple=True,
+            is_abelian=False,
+            root_system_type="B1'",
+            rank=1,
+        )
+
+    def __str__(self) -> str:
+        return "so'(3)"

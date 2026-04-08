@@ -101,15 +101,16 @@ class Ket(QuantumState):
             s = float(label[2:])
             theta = np.arccos(1/np.sqrt(1 + np.exp(-2*s)))
             phi = 0.0
+            vec = np.array([np.cos(theta/2), np.exp(1j*phi) * np.sin(theta/2)], dtype=complex)
+            return vec
         elif label.startswith('|-'):
             s = float(label[2:])
             theta = np.arccos(-1/np.sqrt(1 + np.exp(-2*s)))
             phi = 0.0
+            vec = np.array([np.cos(theta/2), np.exp(1j*phi) * np.sin(theta/2)], dtype=complex)
+            return vec
         else:
             raise ValueError(f"未知标签: {label}")
-        
-        vec = np.array([np.cos(theta/2), np.exp(1j*phi) * np.sin(theta/2)], dtype=complex)
-        return vec
     
     @property
     def vector(self) -> np.ndarray:
@@ -583,10 +584,28 @@ class DensityMatrix(QuantumState):
         
         F(ρ, σ) = (Tr √(√ρ σ √ρ))²
         """
-        sqrt_rho = self._matrix @ np.linalg.matrix_power(self._matrix + 1e-10*np.eye(self.dimension), -0.5)
-        product = sqrt_rho @ other._matrix @ sqrt_rho
-        eigenvalues = np.linalg.eigvalsh(product)
-        return float(np.sum(np.sqrt(eigenvalues[eigenvalues > 0])) ** 2)
+        if self.dimension != other.dimension:
+            return 0.0
+        
+        epsilon = 1e-10
+        
+        rho = self._matrix + epsilon * np.eye(self.dimension, dtype=complex)
+        sigma = other._matrix + epsilon * np.eye(other.dimension, dtype=complex)
+        
+        sqrt_rho = self._sqrt_matrix(rho)
+        
+        product = sqrt_rho @ sigma @ sqrt_rho
+        sqrt_product = self._sqrt_matrix(product)
+        
+        eigenvalues = np.linalg.eigvalsh(sqrt_product)
+        return float(np.sum(np.sqrt(np.maximum(eigenvalues, 0))) ** 2)
+    
+    def _sqrt_matrix(self, matrix: np.ndarray) -> np.ndarray:
+        """计算矩阵的平方根"""
+        eigenvalues, eigenvectors = np.linalg.eigh(matrix)
+        eigenvalues = np.maximum(eigenvalues, 0)
+        sqrt_eigenvalues = np.sqrt(eigenvalues)
+        return eigenvectors @ np.diag(sqrt_eigenvalues) @ eigenvectors.conj().T
     
     def __repr__(self) -> str:
         purity = self.purity

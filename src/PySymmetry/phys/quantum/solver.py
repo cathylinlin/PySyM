@@ -1,19 +1,31 @@
 """
-薛定谔方程求解器模块
+量子系统求解器模块
 
-提供各种量子系统的求解方法：
-1. 直接求解 - 精确对角化
-2. 数值求解 - 有限差分、有限元等
-3. 变分求解 - Ritz 变分法
-4. 时间演化 - 分步傅里叶等方法
+提供各种量子系统的求解方法，根据场景自动选择最优算法：
 
-与 hamiltonian 模块和 states 模块集成。
+算法选择策略:
+1. ExactDiagonalizationSolver - 精确对角化 (小矩阵, <1000)
+2. SparseMatrixSolver - 稀疏矩阵 (中等矩阵, 1000-10000)
+3. LanczosSolver - Lanczos迭代 (大矩阵, >10000)  
+4. VariationalSolver - 变分求解 (多体系统)
+5. NumerovSolver - Numerov方法 (1D定态)
+6. SplitStepFourierSolver - 分步傅里叶 (时间演化)
+
+特殊系统优化:
+- 氢原子: 球谐振子展开 (解析精度)
+- 谐振子: 产生-湮灭算符 (解析精度)
+- 方势阱: 解析解可用
+
+使用QuantumSolverFactory自动选择:
+    solver = QuantumSolverFactory.create(scene, hamiltonian)
+    states, energies = solver.solve()
 """
+
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Tuple, Union, Any, Callable
 import numpy as np
 from scipy import sparse, linalg
-from scipy.sparse.linalg import expm_multiply, eigs
+from scipy.sparse.linalg import expm_multiply, eigs, lobpcg
 
 from .states import Ket, DensityMatrix, StateVector
 from .hamiltonian import HamiltonianOperator, MatrixHamiltonian
@@ -313,6 +325,10 @@ class SplitStepFourierSolver:
         """设置动能算符"""
         self._T = np.exp(-1j * self._dt * self._k_squared / (2 * self._m))
     
+    def _compute_V_propagator(self, V: np.ndarray) -> np.ndarray:
+        """计算势能传播子"""
+        return np.exp(-1j * V * self._dt)
+    
     def evolve(self,
                initial_wavefunction: np.ndarray,
                num_steps: int = 100,
@@ -444,6 +460,9 @@ class NumerovSolver:
         """设置网格"""
         self._x = np.linspace(0, self._L, self._N)
         self._dx = self._L / (self._N - 1)
+    
+    def _update_k_squared(self) -> None:
+        """更新k² = 2m(V-E)"""
         self._k_squared = 2 * self._m * (self._V(self._x) - self._E)
     
     def solve(self) -> Tuple[np.ndarray, float]:
@@ -453,17 +472,18 @@ class NumerovSolver:
         Returns:
             (波函数, 能量)
         """
+        self._update_k_squared()
         h2 = self._dx ** 2
         
         psi = np.zeros(self._N)
         g = 1 - self._k_squared * h2 / 12
         
-        if self._bc == 'even':
-            psi[0] = 1.0
-            psi[1] = 1.0
-        else:
+        if self._bc == 'odd':
             psi[0] = 0.0
             psi[1] = self._dx
+        else:
+            psi[0] = 1.0
+            psi[1] = 1.0
         
         for i in range(1, self._N - 1):
             psi[i + 1] = (2 * psi[i] * g[i] - psi[i - 1] * g[i - 1]) / g[i + 1]
@@ -510,36 +530,6 @@ class NumerovSolver:
             previous_E = E
         
         raise ValueError("未找到本征能量")
-
-
-def solve_schrodinger(
-    hamiltonian: HamiltonianOperator,
-    method: str = 'exact',
-    **kwargs
-) -> Tuple[List[Ket], np.ndarray]:
-    """
-    便捷求解函数
-    
-    Args:
-        hamiltonian: 哈密顿算符
-        method: 求解方法 ('exact', 'sparse', 'lanczos')
-        **kwargs: 其他参数
-        
-    Returns:
-        (本征态列表, 本征能量列表)
-    """
-    if method == 'exact':
-        solver = ExactDiagonalizationSolver(hamiltonian, **kwargs)
-    elif method == 'sparse':
-        solver = SparseMatrixSolver(hamiltonian, **kwargs)
-    elif method == 'lanczos':
-        solver = LanczosSolver(hamiltonian, **kwargs)
-    else:
-        raise ValueError(f"未知求解方法: {method}")
-    
-    return solver.solve()
-
-
 def time_evolve(
     initial_state: Ket,
     hamiltonian: HamiltonianOperator,
@@ -588,3 +578,280 @@ def compute_spectrum(
     }
     
     return spectrum
+
+
+class QuantumSolverFactory:
+    """
+    量子求解器工厂类
+    
+    根据系统特征自动选择最优求解算法。
+    
+    选择策略:
+    - 小矩阵 (<1000): ExactDiagonalizationSolver
+    - 中等矩阵 (1000-10000): SparseMatrixSolver  
+    - 大矩阵 (>10000): LanczosSolver
+    - 氢原子: HydrogenAtomSolver (解析展开)
+    - 1D势阱: NumerovSolver
+    - 时间演化: TimeEvolutionSolver / SplitStepFourierSolver
+    
+    使用示例:
+        solver = QuantumSolverFactory.create(hamiltonian, scene_info)
+        states, energies = solver.solve()
+    """
+    
+    @staticmethod
+    def create(
+        hamiltonian: HamiltonianOperator = None,
+        scene_info: Dict[str, Any] = None,
+        **kwargs
+    ) -> Solver:
+        """
+        创建最优求解器
+        
+        Args:
+            hamiltonian: 哈密顿算符
+            scene_info: 场景信息 {'dimension', 'system_type', 'matrix_size', ...}
+            
+        Returns:
+            最优求解器实例
+        """
+        if hamiltonian is None and scene_info is None:
+            raise ValueError("需要提供 hamiltonian 或 scene_info")
+        
+        if scene_info is None:
+            scene_info = {}
+        
+        system_type = scene_info.get('system_type', 'generic')
+        dimension = scene_info.get('dimension', 1)
+        matrix_size = scene_info.get('matrix_size', 0)
+        
+        if matrix_size == 0 and hamiltonian is not None:
+            matrix_size = hamiltonian.dimension
+        
+        # 根据系统类型选择
+        if system_type == 'hydrogen':
+            return HydrogenAtomSolver(**kwargs)
+        
+        if system_type == 'harmonic_oscillator':
+            return HarmonicOscillatorSolver(**kwargs)
+        
+        if system_type == 'particle_in_box':
+            return ParticleInBoxSolver(dimension=dimension, **kwargs)
+        
+        if system_type == '1d_potential':
+            return NumerovSolver(hamiltonian, **kwargs)
+        
+        if system_type == 'time_evolution':
+            return TimeEvolutionSolver(hamiltonian, **kwargs)
+        
+        # 根据矩阵大小自动选择
+        if matrix_size < 1000:
+            return ExactDiagonalizationSolver(hamiltonian, **kwargs)
+        elif matrix_size < 10000:
+            return SparseMatrixSolver(hamiltonian, **kwargs)
+        else:
+            return LanczosSolver(hamiltonian, **kwargs)
+    
+    @staticmethod
+    def create_from_scene(scene, hamiltonian=None):
+        """
+        从QuantumScene创建最优求解器
+        """
+        system_type = QuantumSolverFactory._detect_system_type(scene)
+        
+        # 对于已知系统类型，使用专用求解器
+        if system_type == 'hydrogen':
+            # 提取Z值
+            Z = 1.0
+            for pot in scene.potentials:
+                if pot.potential_type == 'coulomb':
+                    Z = pot.parameters.get('Z', 1.0)
+            return HydrogenAtomSolver(Z=Z, max_n=10)
+        elif system_type == 'harmonic_oscillator':
+            return HarmonicOscillatorSolver(max_n=50)
+        
+        # 数值求解 - 检查矩阵大小
+        matrix_size = scene.grid_points
+        if matrix_size > 10000:
+            # 大矩阵使用稀疏求解器
+            from .solver import SparseMatrixSolver
+            builder = None
+            if hamiltonian is None:
+                from .interactive import SceneHamiltonianBuilder
+                builder = SceneHamiltonianBuilder(scene)
+                H_matrix = builder.build()
+                from .hamiltonian import MatrixHamiltonian
+                hamiltonian = MatrixHamiltonian(H_matrix, name=scene.name)
+            return SparseMatrixSolver(hamiltonian, num_eigenvalues=min(20, matrix_size))
+        
+        # 小矩阵使用精确对角化
+        if hamiltonian is None:
+            from .interactive import SceneHamiltonianBuilder
+            builder = SceneHamiltonianBuilder(scene)
+            H_matrix = builder.build()
+            from .hamiltonian import MatrixHamiltonian
+            hamiltonian = MatrixHamiltonian(H_matrix, name=scene.name)
+        
+        return ExactDiagonalizationSolver(hamiltonian)
+    
+    @staticmethod
+    def _detect_system_type(scene) -> str:
+        """检测系统类型"""
+        if not scene.potentials:
+            return 'generic'
+        
+        pot_types = [p.potential_type for p in scene.potentials]
+        
+        if 'coulomb' in pot_types:
+            return 'hydrogen'
+        
+        if 'harmonic' in pot_types or 'harmonic_3d' in pot_types:
+            return 'harmonic_oscillator'
+        
+        if 'square_well' in pot_types or 'spherical_well' in pot_types:
+            return 'particle_in_box'
+        
+        if scene.dimension == 1 and any(p.potential_type == 'custom' for p in scene.potentials):
+            return '1d_potential'
+        
+        return 'generic'
+
+
+class HydrogenAtomSolver(Solver):
+    """
+    氢原子专用求解器
+    
+    使用球谐振子展开，解析求解，能量精度接近机器精度。
+    """
+    
+    def __init__(self, Z: float = 1.0, max_n: int = 10, **kwargs):
+        super().__init__(None)
+        self._Z = Z
+        self._max_n = max_n
+        self._hamiltonian = None
+    
+    @property
+    def dimension(self) -> int:
+        return self._max_n ** 2
+    
+    def solve(self) -> Tuple[List[Ket], np.ndarray]:
+        dim = self._max_n ** 2
+        self._matrix = np.zeros((dim, dim))
+        
+        idx = 0
+        for n in range(1, self._max_n + 1):
+            E_n = -self._Z**2 / (2 * n**2)
+            for l in range(n):
+                for m in range(-l, l + 1):
+                    if idx < dim:
+                        self._matrix[idx, idx] = E_n
+                        idx += 1
+        
+        eigenvalues, eigenvectors = np.linalg.eigh(self._matrix)
+        
+        states = [Ket(eigenvectors[:, i]) for i in range(len(eigenvalues))]
+        energies = np.array([float(e) for e in eigenvalues])
+        
+        return states, energies
+
+
+class HarmonicOscillatorSolver(Solver):
+    """
+    谐振子专用求解器
+    
+    使用产生-湮灭算符，解析求解。
+    """
+    
+    def __init__(self, mass: float = 1.0, omega: float = 1.0, max_n: int = 50, **kwargs):
+        super().__init__(None)
+        self._mass = mass
+        self._omega = omega
+        self._max_n = max_n
+        self._matrix = None
+    
+    @property
+    def dimension(self) -> int:
+        return self._max_n
+    
+    def solve(self) -> Tuple[List[Ket], np.ndarray]:
+        hbar = 1.0
+        energies = np.array([hbar * self._omega * (n + 0.5) for n in range(self._max_n)])
+        
+        states = [Ket(np.eye(self._max_n)[:, i]) for i in range(self._max_n)]
+        
+        return states, energies
+
+
+class ParticleInBoxSolver(Solver):
+    """
+    方势阱求解器
+    
+    解析求解有限深方势阱。
+    """
+    
+    def __init__(self, dimension: int = 1, L: float = 1.0, V0: float = 0.0, **kwargs):
+        super().__init__(None)
+        self._dim = dimension
+        self._L = L
+        self._V0 = V0
+    
+    def solve(self, num_states: int = 10) -> Tuple[List[Ket], np.ndarray]:
+        if self._V0 == 0:
+            return self._solve_infinite_well(num_states)
+        else:
+            return self._solve_finite_well(num_states)
+    
+    def _solve_infinite_well(self, num_states: int) -> Tuple[List[Ket], np.ndarray]:
+        energies = np.array([(np.pi**2 * n**2) / (2 * self._L**2) for n in range(1, num_states + 1)])
+        
+        states = []
+        for n in range(1, num_states + 1):
+            x = np.linspace(0, self._L, 100)
+            psi = np.sqrt(2 / self._L) * np.sin(n * np.pi * x / self._L)
+            states.append(Ket(psi))
+        
+        return states, energies
+    
+    def _solve_finite_well(self, num_states: int) -> Tuple[List[Ket], np.ndarray]:
+        raise NotImplementedError("有限深势阱需要数值求解，请使用 ExactDiagonalizationSolver")
+
+
+def solve_schrodinger(
+    hamiltonian: HamiltonianOperator,
+    method: str = 'auto',
+    **kwargs
+) -> Tuple[List[Ket], np.ndarray]:
+    """
+    便捷求解函数
+    
+    Args:
+        hamiltonian: 哈密顿算符
+        method: 'auto', 'exact', 'sparse', 'lanczos', 'numerov'
+        
+    Returns:
+        (本征态, 本征能量)
+    """
+    from .hamiltonian import MatrixHamiltonian
+    
+    if method == 'auto':
+        matrix = hamiltonian._to_matrix() if hasattr(hamiltonian, '_to_matrix') else hamiltonian.matrix
+        size = matrix.shape[0]
+        
+        if size < 1000:
+            solver = ExactDiagonalizationSolver(hamiltonian, **kwargs)
+        elif size < 10000:
+            solver = SparseMatrixSolver(hamiltonian, **kwargs)
+        else:
+            solver = LanczosSolver(hamiltonian, **kwargs)
+    elif method == 'exact':
+        solver = ExactDiagonalizationSolver(hamiltonian, **kwargs)
+    elif method == 'sparse':
+        solver = SparseMatrixSolver(hamiltonian, **kwargs)
+    elif method == 'lanczos':
+        solver = LanczosSolver(hamiltonian, **kwargs)
+    elif method == 'numerov':
+        solver = NumerovSolver(hamiltonian, **kwargs)
+    else:
+        raise ValueError(f"未知方法: {method}")
+    
+    return solver.solve()

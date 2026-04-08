@@ -252,23 +252,27 @@ class DecoherenceSimulator(Simulator):
         return self._rho.copy()
     
     def step(self, dt: float) -> None:
-        """执行退相干步骤"""
-        decay = np.exp(-self._gamma * dt)
+        """执行退相干步骤（相位阻尼）"""
+        gamma = self._gamma
+        decay = np.exp(-gamma * dt)
+        rho = self._rho.matrix.copy()
         
-        for i, proj in enumerate(self._basis):
-            proj_matrix = np.outer(proj, np.conj(proj))
-            
-            rho_proj = proj_matrix @ self._rho.matrix @ proj_matrix
-            trace_proj = np.trace(rho_proj)
-            
-            if trace_proj > 0:
-                rho_proj = rho_proj / trace_proj
-                self._rho._matrix = decay * self._rho.matrix + (1 - decay) * sum(
-                    np.trace(proj @ self._rho.matrix @ proj) * rho_proj 
-                    for proj in self._basis
-                )
+        eigvals, eigvecs = np.linalg.eigh(rho)
         
-        self._rho._matrix = self._rho.matrix / np.trace(self._rho.matrix)
+        rho_diag = eigvecs.conj().T @ rho @ eigvecs
+        
+        n = len(eigvals)
+        for i in range(n):
+            for j in range(n):
+                if i != j:
+                    rho_diag[i, j] *= decay
+        
+        self._rho._matrix = eigvecs @ rho_diag @ eigvecs.conj().T
+        
+        trace = np.trace(self._rho._matrix)
+        if abs(trace) > 1e-10:
+            self._rho._matrix /= trace
+        
         self._time += dt
         
         self._purity_history.append(self._rho.purity)
@@ -338,10 +342,14 @@ class ParticleFieldSimulator(Simulator):
         """执行一步模拟"""
         forces = self._compute_force()
         
+        old_momenta = self._momenta.copy()
+        
         accelerations = forces / self._masses[:, np.newaxis]
         
         self._momenta += accelerations * dt
-        self._positions += self._momenta / self._masses[:, np.newaxis] * dt
+        
+        avg_momenta = (old_momenta + self._momenta) / 2
+        self._positions += avg_momenta / self._masses[:, np.newaxis] * dt
         
         self._time += dt
         
@@ -463,35 +471,54 @@ class SpinChainSimulator(Simulator):
     
     def _build_hamiltonian(self) -> None:
         """构建自旋链哈密顿量"""
-        from .hamiltonian import spin_operators, pauli_matrices
+        from .hamiltonian import pauli_matrices
         
-        sx, sy, sz = pauli_matrices()[:3]
-        I = np.eye(2)
+        sx, sy, sz, I = pauli_matrices()
+        sx /= 2
+        sy /= 2
+        sz /= 2
         
         H = np.zeros((self._dim, self._dim), dtype=complex)
         
         for i in range(self._n - 1):
-            for j_op, op_name in [(sx, 'sx'), (sy, 'sy'), (sz, 'z')]:
-                term = 1
-                for k in range(self._n):
-                    if k == i:
-                        term = np.kron(term, j_op)
-                    elif k == i + 1:
-                        J_val = self._J.get(op_name, 0.0)
-                        term = np.kron(term, j_op) * J_val
-                    else:
-                        term = np.kron(term, I)
-                H += term
+            term = np.zeros((self._dim, self._dim), dtype=complex)
+            
+            for state in range(self._dim):
+                bit_state = format(state, f'0{self._n}b')
+                bits = [int(b) for b in bit_state]
+                
+                si = bits[i]
+                sip1 = bits[i + 1]
+                
+                term[state, state] = self._J.get('z', 0.0) * (si - 0.5) * (sip1 - 0.5)
+                term[state, state] += self._J.get('x', 0.0) * 0.25 if si != sip1 else 0
+                term[state, state] += self._J.get('y', 0.0) * 0.25 if si != sip1 else 0
+            
+            for j in range(self._n - 1):
+                if j == i:
+                    continue
+                
+                for state in range(self._dim):
+                    new_state = state
+                    
+                    bit_i = (state >> (self._n - 1 - i)) & 1
+                    bit_j = (state >> (self._n - 1 - j)) & 1
+                    
+                    if bit_i != bit_j:
+                        flipped = state ^ (1 << (self._n - 1 - i)) ^ (1 << (self._n - 1 - j))
+                        new_state = flipped
+                    
+                    term[new_state, state] += self._J.get('x', 0.0) * 0.5
+                    term[new_state, state] += self._J.get('y', 0.0) * 0.5 * 1j
+                    term[new_state, state] += self._J.get('z', 0.0) * 0.25
+            
+            H += term
         
         if self._h != 0:
-            for i in range(self._n):
-                term = 1
-                for k in range(self._n):
-                    if k == i:
-                        term = np.kron(term, sz)
-                    else:
-                        term = np.kron(term, I)
-                H -= self._h * term
+            for state in range(self._dim):
+                bit_state = format(state, f'0{self._n}b')
+                m_total = sum((int(b) - 0.5) for b in bit_state)
+                H[state, state] -= self._h * m_total
         
         self._H = MatrixHamiltonian(H)
     

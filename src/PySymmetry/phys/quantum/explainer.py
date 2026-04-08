@@ -479,6 +479,67 @@ def explain_quantum_system(
     return composite.explain_all()
 
 
+class SymmetryExplainer(ResultExplainer):
+    """
+    对称性解释器
+    
+    基于对称性分析结果解释量子系统。
+    
+    Args:
+        symmetry_info: 对称性分析结果
+        state_classifications: 态分类结果
+    """
+    
+    def __init__(self,
+                 symmetry_info: Dict[str, Any],
+                 state_classifications: Optional[Dict[str, Any]] = None):
+        super().__init__("SymmetryExplainer")
+        self._symmetry_info = symmetry_info
+        self._classifications = state_classifications
+    
+    def compute_symmetry_properties(self) -> Dict[str, Any]:
+        """计算对称性性质"""
+        return {
+            'detected': self._symmetry_info.get('detected', []),
+            'conserved': self._symmetry_info.get('conserved', []),
+            'description': self._symmetry_info.get('description', ''),
+            'classifications': self._classifications
+        }
+    
+    def explain(self, symmetry_data: Optional[Dict[str, Any]] = None) -> str:
+        """生成对称性解释"""
+        if symmetry_data is None:
+            symmetry_data = self.compute_symmetry_properties()
+        
+        lines = []
+        lines.append("=== 对称性分析 ===")
+        
+        detected = symmetry_data.get('detected', [])
+        if detected:
+            lines.append(f"检测到的对称性: {', '.join(detected)}")
+        else:
+            lines.append("未检测到明显对称性")
+        
+        conserved = symmetry_data.get('conserved', [])
+        if conserved:
+            lines.append(f"\n守恒量: {', '.join(conserved)}")
+        
+        desc = symmetry_data.get('description', '')
+        if desc:
+            lines.append(f"\n描述: {desc}")
+        
+        classifications = symmetry_data.get('classifications', {})
+        if classifications and 'parity' in classifications:
+            lines.append("\n态的宇称分类:")
+            parity_data = classifications['parity']
+            for idx, data in list(parity_data.items())[:5]:
+                p = data.get('parity', 0)
+                p_str = '+' if p > 0 else '-'
+                lines.append(f"  State {idx}: E={data.get('energy', 0):.4f}, P={p_str}")
+        
+        return "\n".join(lines)
+
+
 def explain_measurement_results(
     measurement_results: List[int],
     basis_labels: Optional[List[str]] = None
