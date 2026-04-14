@@ -403,7 +403,7 @@ class VariationalSolver(Solver):
         self._params = np.array(parameters, dtype=float)
         self._num_params = len(parameters)
     
-    def solve(self, max_iterations: int = 1000, tolerance: float = 1e-8) -> Tuple[Ket, float]:
+    def solve_variational(self, max_iterations: int = 1000, tolerance: float = 1e-8) -> Tuple[Ket, float]:
         """变分优化"""
         from scipy.optimize import minimize
         
@@ -441,7 +441,7 @@ class NumerovSolver:
     """
     
     def __init__(self,
-                 potential: Callable[[float], float],
+                 potential: Callable[[np.ndarray], np.ndarray],
                  mass: float = 1.0,
                  energy: float = 1.0,
                  x_range: float = 10.0,
@@ -463,7 +463,8 @@ class NumerovSolver:
     
     def _update_k_squared(self) -> None:
         """更新k² = 2m(V-E)"""
-        self._k_squared = 2 * self._m * (self._V(self._x) - self._E)
+        V_vals = self._V(self._x)
+        self._k_squared = np.asarray(2.0 * self._m * (V_vals - self._E))
     
     def solve(self) -> Tuple[np.ndarray, float]:
         """
