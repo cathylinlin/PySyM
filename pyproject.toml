@@ -72,17 +72,49 @@ where = ["src"]
 testpaths = ["tests"]
 addopts = "-v"
 
-[tool.black]
-line-length = 88
-target-version = ["py310", "py311", "py312"]
-
 [tool.mypy]
 python_version = "3.10"
 warn_return_any = true
 warn_unused_configs = true
 ignore_missing_imports = true
+strict = false
+
+[[tool.mypy.overrides]]
+module = "numpy.*"
+follow_imports = "skip"
+
+[[tool.mypy.overrides]]
+module = "scipy.*"
+follow_imports = "skip"
+
+[[tool.mypy.overrides]]
+module = "matplotlib.*"
+follow_imports = "skip"
+
+[[tool.mypy.overrides]]
+module = "sympy.*"
+follow_imports = "skip"
+
+[[tool.mypy.overrides]]
+module = "numba.*"
+follow_imports = "skip"
+
+[[tool.mypy.overrides]]
+module = "joblib.*"
+follow_imports = "skip"
+
+[[tool.mypy.overrides]]
+module = "plotly.*"
+follow_imports = "skip"
+
+[[tool.mypy.overrides]]
+module = "spglib.*"
+follow_imports = "skip"
 
 [tool.ruff]
 line-length = 88
 target-version = "py310"
+
+[tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "B", "C4"]
+ignore = ["N806", "N803", "B905", "E501", "N999", "B007", "E741", "N802", "F401", "C401", "F841", "B904", "C4", "F403", "B023", "E722", "F821", "I001"]

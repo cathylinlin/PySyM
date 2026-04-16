@@ -36,7 +36,7 @@ class TestMatrixDecompositions:
 
     def test_qr_decomposition_mode(self):
         m = np.array([[1, 2], [3, 4]])
-        Q, R = MatrixDecompositions.qr_decomposition(m, mode='reduced')
+        Q, R = MatrixDecompositions.qr_decomposition(m, mode="reduced")
         assert Q.shape == (2, 2)
 
     def test_cholesky_decomposition(self):
@@ -74,7 +74,7 @@ class TestMatrixDecompositions:
 
     def test_schur_decomposition_complex(self):
         m = np.array([[1, 2], [3, 4]])
-        T, Z = MatrixDecompositions.schur_decomposition(m, output='complex')
+        T, Z = MatrixDecompositions.schur_decomposition(m, output="complex")
         assert T.shape == (2, 2)
 
     def test_hessenberg_decomposition(self):
@@ -91,7 +91,7 @@ class TestMatrixDecompositions:
 
     def test_polar_decomposition_left(self):
         m = np.array([[1, 2], [3, 4]])
-        U, P = MatrixDecompositions.polar_decomposition(m, side='left')
+        U, P = MatrixDecompositions.polar_decomposition(m, side="left")
         assert U.shape == (2, 2)
 
     def test_spectral_decomposition(self):

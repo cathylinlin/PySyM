@@ -79,20 +79,14 @@ class TestMatrixFactory:
     def test_vandermonde(self):
         x = np.array([1, 2, 3])
         m = MatrixFactory.vandermonde(x)
-        expected = np.array([
-            [1, 1, 1],
-            [1, 2, 4],
-            [1, 3, 9]
-        ])
+        expected = np.array([[1, 1, 1], [1, 2, 4], [1, 3, 9]])
         assert np.allclose(m, expected)
 
     def test_hilbert(self):
         m = MatrixFactory.hilbert(3)
-        expected = np.array([
-            [1, 1/2, 1/3],
-            [1/2, 1/3, 1/4],
-            [1/3, 1/4, 1/5]
-        ])
+        expected = np.array(
+            [[1, 1 / 2, 1 / 3], [1 / 2, 1 / 3, 1 / 4], [1 / 3, 1 / 4, 1 / 5]]
+        )
         assert np.allclose(m, expected)
 
     def test_invhilbert(self):
@@ -100,21 +94,13 @@ class TestMatrixFactory:
         assert m.shape == (3, 3)
 
     def test_pascal_symmetric(self):
-        m = MatrixFactory.pascal(3, kind='symmetric')
-        expected = np.array([
-            [1, 1, 1],
-            [1, 2, 3],
-            [1, 3, 6]
-        ])
+        m = MatrixFactory.pascal(3, kind="symmetric")
+        expected = np.array([[1, 1, 1], [1, 2, 3], [1, 3, 6]])
         assert np.allclose(m, expected)
 
     def test_pascal_lower(self):
-        m = MatrixFactory.pascal(3, kind='lower')
-        expected = np.array([
-            [1, 0, 0],
-            [1, 1, 0],
-            [1, 2, 1]
-        ])
+        m = MatrixFactory.pascal(3, kind="lower")
+        expected = np.array([[1, 0, 0], [1, 1, 0], [1, 2, 1]])
         assert np.allclose(m, expected)
 
     def test_dft(self):
@@ -130,25 +116,25 @@ class TestMatrixFactory:
 
     def test_rotation_3d_x(self):
         theta = np.pi
-        m = MatrixFactory.rotation_3d('x', theta)
+        m = MatrixFactory.rotation_3d("x", theta)
         expected = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
         assert np.allclose(m, expected)
 
     def test_rotation_3d_y(self):
         theta = np.pi
-        m = MatrixFactory.rotation_3d('y', theta)
+        m = MatrixFactory.rotation_3d("y", theta)
         expected = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])
         assert np.allclose(m, expected)
 
     def test_rotation_3d_z(self):
         theta = np.pi
-        m = MatrixFactory.rotation_3d('z', theta)
+        m = MatrixFactory.rotation_3d("z", theta)
         expected = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, 1]], dtype=float)
         assert np.allclose(m, expected)
 
     def test_rotation_3d_invalid_axis(self):
         with pytest.raises(ValueError):
-            MatrixFactory.rotation_3d('w', np.pi)
+            MatrixFactory.rotation_3d("w", np.pi)
 
     def test_reflection_2d(self):
         m = MatrixFactory.reflection_2d(0)
@@ -156,18 +142,18 @@ class TestMatrixFactory:
         assert np.allclose(m, expected)
 
     def test_shear_2d_x(self):
-        m = MatrixFactory.shear_2d('x', 2)
+        m = MatrixFactory.shear_2d("x", 2)
         expected = np.array([[1, 2], [0, 1]])
         assert np.allclose(m, expected)
 
     def test_shear_2d_y(self):
-        m = MatrixFactory.shear_2d('y', 2)
+        m = MatrixFactory.shear_2d("y", 2)
         expected = np.array([[1, 0], [2, 1]])
         assert np.allclose(m, expected)
 
     def test_shear_2d_invalid_axis(self):
         with pytest.raises(ValueError):
-            MatrixFactory.shear_2d('z', 1)
+            MatrixFactory.shear_2d("z", 1)
 
     def test_scaling_2d(self):
         m = MatrixFactory.scaling_2d(2, 3)
@@ -181,11 +167,7 @@ class TestMatrixFactory:
 
     def test_permutation(self):
         m = MatrixFactory.permutation(3, [2, 0, 1])
-        expected = np.array([
-            [0, 0, 1],
-            [1, 0, 0],
-            [0, 1, 0]
-        ])
+        expected = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
         assert np.allclose(m, expected)
 
     def test_permutation_invalid_length(self):
@@ -199,7 +181,9 @@ class TestMatrixFactory:
     def test_block_diagonal(self):
         blocks = [np.eye(2), np.eye(3)]
         m = MatrixFactory.block_diagonal(blocks)
-        expected = np.block([[np.eye(2), np.zeros((2, 3))], [np.zeros((3, 2)), np.eye(3)]])
+        expected = np.block(
+            [[np.eye(2), np.zeros((2, 3))], [np.zeros((3, 2)), np.eye(3)]]
+        )
         assert np.allclose(m, expected)
 
     def test_block_diagonal_empty(self):
@@ -211,12 +195,7 @@ class TestMatrixFactory:
         u = np.array([1, 2, 3])
         l = np.array([1, 2, 3])
         m = MatrixFactory.tridiagonal(d, u, l)
-        expected = np.array([
-            [1, 1, 0, 0],
-            [1, 2, 2, 0],
-            [0, 2, 3, 3],
-            [0, 0, 3, 4]
-        ])
+        expected = np.array([[1, 1, 0, 0], [1, 2, 2, 0], [0, 2, 3, 3], [0, 0, 3, 4]])
         assert np.allclose(m, expected)
 
     def test_symmetric(self):

@@ -9,7 +9,7 @@ from src.PySymmetry.tools.lie_algebra_symbolic import (
     SymbolicWeylGroup,
     compute_structure_constants,
     verify_jacobi_identity,
-    generate_weyl_coordinates
+    generate_weyl_coordinates,
 )
 
 
@@ -71,14 +71,14 @@ class TestSymbolicLieAlgebraElement:
         assert expr is not None
 
     def test_simplify(self):
-        x = Symbol('x')
+        x = Symbol("x")
         elem = SymbolicLieAlgebraElement([x, x + x, 3])
         simplified = elem.simplify()
         assert len(simplified.coefficients) == 3
 
     def test_expand(self):
-        x = Symbol('x')
-        y = Symbol('y')
+        x = Symbol("x")
+        y = Symbol("y")
         elem = SymbolicLieAlgebraElement([x * y, x + y])
         expanded = elem.expand()
         assert len(expanded.coefficients) == 2
@@ -103,23 +103,20 @@ class TestSymbolicLieBracket:
     def test_bracket_with_structure_constants(self):
         struct = {(0, 1): [0, 0, 1], (1, 0): [0, 0, -1]}
         bracket = SymbolicLieBracket(struct)
-        
+
         e0 = SymbolicLieAlgebraElement([1, 0, 0])
         e1 = SymbolicLieAlgebraElement([0, 1, 0])
-        
+
         result = bracket(e0, e1)
         assert result.dimension == 3
 
     def test_verify_anticommutative(self):
-        struct = {
-            (0, 1): [0, 0, 1],
-            (1, 0): [0, 0, -1]
-        }
+        struct = {(0, 1): [0, 0, 1], (1, 0): [0, 0, -1]}
         bracket = SymbolicLieBracket(struct)
         basis = [
             SymbolicLieAlgebraElement.basis_element(0, 3),
             SymbolicLieAlgebraElement.basis_element(1, 3),
-            SymbolicLieAlgebraElement.basis_element(2, 3)
+            SymbolicLieAlgebraElement.basis_element(2, 3),
         ]
         assert bracket.verify_anticommutative(basis) == True
 
@@ -130,13 +127,13 @@ class TestSymbolicLieBracket:
             (2, 0): [0, 0, 1],
             (1, 0): [0, 0, -1],
             (2, 1): [0, 0, -1],
-            (0, 2): [0, 0, -1]
+            (0, 2): [0, 0, -1],
         }
         bracket = SymbolicLieBracket(struct)
         basis = [
             SymbolicLieAlgebraElement.basis_element(0, 3),
             SymbolicLieAlgebraElement.basis_element(1, 3),
-            SymbolicLieAlgebraElement.basis_element(2, 3)
+            SymbolicLieAlgebraElement.basis_element(2, 3),
         ]
         assert bracket.verify_jacobi_identity(basis) == True
 

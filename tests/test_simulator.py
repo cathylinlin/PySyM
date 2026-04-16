@@ -5,6 +5,9 @@ from PySymmetry.phys.quantum.simulator import (
     QuantumSimulator,
     MeasurementSimulator,
     DecoherenceSimulator,
+    ParticleFieldSimulator,
+    ScatteringSimulator,
+    SpinChainSimulator,
 )
 from PySymmetry.phys.quantum.hamiltonian import MatrixHamiltonian
 from PySymmetry.phys.quantum.states import Ket, DensityMatrix
@@ -32,7 +35,7 @@ class TestQuantumSimulator:
         ket = Ket(np.array([1, 0], dtype=complex))
         sim = QuantumSimulator(ham, ket)
         results = sim.run(duration=0.01, dt=0.005)
-        assert 'times' in results
+        assert "times" in results
 
     def test_state_history(self):
         H = np.array([[0, 0], [0, 1]], dtype=complex)
@@ -60,14 +63,14 @@ class TestMeasurementSimulator:
         dm = DensityMatrix(np.array([[0.5, 0.5], [0.5, 0.5]], dtype=complex))
         sim = MeasurementSimulator(dm)
         result = sim.ensemble_measure(num_samples=10)
-        assert 'counts' in result
-        assert 'frequencies' in result
+        assert "counts" in result
+        assert "frequencies" in result
 
     def test_run(self):
         dm = DensityMatrix(np.array([[1, 0], [0, 0]], dtype=complex))
         sim = MeasurementSimulator(dm)
         result = sim.run(duration=10, dt=1)
-        assert 'counts' in result
+        assert "counts" in result
 
 
 class TestDecoherenceSimulator:
@@ -93,8 +96,8 @@ class TestDecoherenceSimulator:
         dm = DensityMatrix(np.array([[1, 0], [0, 0]], dtype=complex))
         sim = DecoherenceSimulator(dm)
         result = sim.run(duration=0.1, dt=0.05)
-        assert 'times' in result
-        assert 'purity_history' in result
+        assert "times" in result
+        assert "purity_history" in result
 
     def test_dephasing_rate(self):
         dm = DensityMatrix(np.array([[0.5, 0.5], [0.5, 0.5]], dtype=complex))
@@ -102,3 +105,54 @@ class TestDecoherenceSimulator:
         sim.step(0.5)
         state = sim.state
         assert state.dimension == 2
+
+
+class TestParticleFieldSimulator:
+    def test_creation(self):
+        positions = np.array([[0.0, 0.0, 0.0]])
+        momenta = np.array([[1.0, 0.0, 0.0]])
+        charges = np.array([1.0])
+        masses = np.array([1.0])
+        sim = ParticleFieldSimulator(
+            particle_positions=positions,
+            particle_momenta=momenta,
+            charges=charges,
+            masses=masses,
+        )
+        assert sim.name == "ParticleFieldSimulator"
+
+    def test_run(self):
+        positions = np.array([[0.0, 0.0, 0.0]])
+        momenta = np.array([[1.0, 0.0, 0.0]])
+        charges = np.array([1.0])
+        masses = np.array([1.0])
+        sim = ParticleFieldSimulator(
+            particle_positions=positions,
+            particle_momenta=momenta,
+            charges=charges,
+            masses=masses,
+        )
+        result = sim.run(duration=0.01, dt=0.005)
+        assert "times" in result
+
+
+class TestScatteringSimulator:
+    def test_creation(self):
+        psi = np.zeros(64)
+        psi[32] = 1.0
+        V = lambda x: 0.0
+        sim = ScatteringSimulator(initial_wavefunction=psi, interaction_potential=V)
+        assert sim.name == "ScatteringSimulator"
+
+
+class TestSpinChainSimulator:
+    def test_creation(self):
+        couplings = {"xx": 1.0, "zz": 0.5}
+        sim = SpinChainSimulator(num_sites=3, couplings=couplings)
+        assert sim.name == "SpinChainSimulator"
+
+    def test_run(self):
+        couplings = {"xx": 1.0, "zz": 0.5}
+        sim = SpinChainSimulator(num_sites=3, couplings=couplings)
+        result = sim.run(duration=0.01, dt=0.005)
+        assert result is not None

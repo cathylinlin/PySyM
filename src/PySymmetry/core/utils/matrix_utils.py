@@ -2,7 +2,9 @@
 """
 矩阵工具模块
 """
+
 import numpy as np
+
 
 def is_invertible(matrix: np.ndarray) -> bool:
     """

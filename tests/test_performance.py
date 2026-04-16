@@ -52,7 +52,7 @@ class TestPerformanceModule:
         assert np.allclose(result, np.array([[1]]))
 
     def test_optimize_blevit_check_hermitian(self):
-        m = np.array([[1, 2+1j], [2-1j, 1]], dtype=complex)
+        m = np.array([[1, 2 + 1j], [2 - 1j, 1]], dtype=complex)
         assert performance.optimize_blevit_check(m) == True
 
     def test_optimize_blevit_check_not_hermitian(self):
@@ -107,7 +107,8 @@ class TestPerformanceModule:
 
     def test_parallel_apply_no_joblib(self):
         def square(x):
-            return x ** 2
+            return x**2
+
         args_list = [(1,), (2,), (3,)]
         result = performance.parallel_apply(square, args_list, n_jobs=1)
         assert result == [1, 4, 9]
@@ -119,7 +120,8 @@ class TestPerformanceModule:
 
     def test_batch_evaluate(self):
         def f(x):
-            return x ** 2
+            return x**2
+
         points = np.array([1, 2, 3])
         result = performance.batch_evaluate(f, points)
         expected = np.array([1, 4, 9])

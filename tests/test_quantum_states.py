@@ -1,6 +1,17 @@
 import pytest
 import numpy as np
-from PySymmetry.phys.quantum.states import Ket, Bra, StateVector, DensityMatrix, basis_state, bell_state, w_state, ghz_state, tensor_product, superposition
+from PySymmetry.phys.quantum.states import (
+    Ket,
+    Bra,
+    StateVector,
+    DensityMatrix,
+    basis_state,
+    bell_state,
+    w_state,
+    ghz_state,
+    tensor_product,
+    superposition,
+)
 
 
 class TestKet:
@@ -15,9 +26,9 @@ class TestKet:
         assert ket[0] == 1.0
 
     def test_ket_labels(self):
-        ket = Ket('0')
+        ket = Ket("0")
         assert np.allclose(ket.vector, [1, 0])
-        ket = Ket('1')
+        ket = Ket("1")
         assert np.allclose(ket.vector, [0, 1])
 
     def test_ket_norm(self):
@@ -38,18 +49,18 @@ class TestKet:
         assert np.allclose(ket.vector, copied.vector)
 
     def test_ket_add(self):
-        ket0 = Ket('0')
-        ket1 = Ket('1')
+        ket0 = Ket("0")
+        ket1 = Ket("1")
         result = ket0 + ket1
         assert result.dimension == 2
 
     def test_ket_scalar_mul(self):
-        ket = Ket('0')
+        ket = Ket("0")
         result = ket * 2
         assert np.allclose(result.vector, [2, 0])
 
     def test_ket_neg(self):
-        ket = Ket('0')
+        ket = Ket("0")
         result = -ket
         assert np.allclose(result.vector, [-1, 0])
 
@@ -198,5 +209,5 @@ class TestHelperFunctions:
     def test_superposition(self):
         ket0 = Ket(np.array([1, 0], dtype=complex))
         ket1 = Ket(np.array([0, 1], dtype=complex))
-        result = superposition((ket0, 1/np.sqrt(2)), (ket1, 1/np.sqrt(2)))
+        result = superposition((ket0, 1 / np.sqrt(2)), (ket1, 1 / np.sqrt(2)))
         assert np.isclose(result.norm(), 1.0)

@@ -7,20 +7,20 @@
 - 特殊正交群 SO(n)
 """
 
-from .base import MatrixGroupElement, MatrixGroup
-from .general_linear import GLnElement, GeneralLinearGroup
-from .special_linear import SLnElement, SpecialLinearGroup
+from .base import MatrixGroup, MatrixGroupElement
+from .general_linear import GeneralLinearGroup, GLnElement
 from .orthogonal import OnElement, OrthogonalGroup, SOnElement, SpecialOrthogonalGroup
+from .special_linear import SLnElement, SpecialLinearGroup
 
 __all__ = [
-    'MatrixGroupElement',
-    'MatrixGroup',
-    'GLnElement',
-    'GeneralLinearGroup',
-    'SLnElement',
-    'SpecialLinearGroup',
-    'OnElement',
-    'OrthogonalGroup',
-    'SOnElement',
-    'SpecialOrthogonalGroup',
+    "MatrixGroupElement",
+    "MatrixGroup",
+    "GLnElement",
+    "GeneralLinearGroup",
+    "SLnElement",
+    "SpecialLinearGroup",
+    "OnElement",
+    "OrthogonalGroup",
+    "SOnElement",
+    "SpecialOrthogonalGroup",
 ]

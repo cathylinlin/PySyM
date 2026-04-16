@@ -1,11 +1,23 @@
 import pytest
 import numpy as np
 from src.PySymmetry.core.matrix.special_matrices import (
-    DiagonalMatrix, SymmetricMatrix, HermitianMatrix, OrthogonalMatrix,
-    UnitaryMatrix, UpperTriangularMatrix, LowerTriangularMatrix,
-    TridiagonalMatrix, ToeplitzMatrix, CirculantMatrix, HankelMatrix,
-    PermutationMatrix, PositiveDefiniteMatrix, PositiveSemidefiniteMatrix,
-    RotationMatrix, ReflectionMatrix, ProjectionMatrix
+    DiagonalMatrix,
+    SymmetricMatrix,
+    HermitianMatrix,
+    OrthogonalMatrix,
+    UnitaryMatrix,
+    UpperTriangularMatrix,
+    LowerTriangularMatrix,
+    TridiagonalMatrix,
+    ToeplitzMatrix,
+    CirculantMatrix,
+    HankelMatrix,
+    PermutationMatrix,
+    PositiveDefiniteMatrix,
+    PositiveSemidefiniteMatrix,
+    RotationMatrix,
+    ReflectionMatrix,
+    ProjectionMatrix,
 )
 
 
@@ -40,7 +52,7 @@ class TestDiagonalMatrix:
         diag = [1, 2, 3]
         dm = DiagonalMatrix(diag)
         inv = dm.inverse()
-        assert np.allclose(inv.data, np.diag([1.0, 0.5, 1.0/3.0]))
+        assert np.allclose(inv.data, np.diag([1.0, 0.5, 1.0 / 3.0]))
 
     def test_inverse_singular(self):
         diag = [1, 0, 3]
@@ -98,8 +110,7 @@ class TestHermitianMatrix:
 class TestOrthogonalMatrix:
     def test_init_2d_rotation(self):
         theta = np.pi / 4
-        Q = np.array([[np.cos(theta), -np.sin(theta)],
-                      [np.sin(theta), np.cos(theta)]])
+        Q = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
         om = OrthogonalMatrix(Q)
         assert np.allclose(om.data, Q)
 
@@ -115,8 +126,7 @@ class TestOrthogonalMatrix:
 
     def test_inverse(self):
         theta = np.pi / 6
-        Q = np.array([[np.cos(theta), -np.sin(theta)],
-                      [np.sin(theta), np.cos(theta)]])
+        Q = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
         om = OrthogonalMatrix(Q)
         inv = om.inverse()
         assert np.allclose(inv.data, Q.T)
@@ -185,12 +195,7 @@ class TestToeplitzMatrix:
     def test_init_valid(self):
         first_row = [1, 2, 3, 4]
         first_col = [1, 5, 6, 7]
-        data = np.array([
-            [1, 2, 3, 4],
-            [5, 1, 2, 3],
-            [6, 5, 1, 2],
-            [7, 6, 5, 1]
-        ])
+        data = np.array([[1, 2, 3, 4], [5, 1, 2, 3], [6, 5, 1, 2], [7, 6, 5, 1]])
         tpm = ToeplitzMatrix(data)
         assert np.allclose(tpm.data, data)
 
@@ -209,12 +214,7 @@ class TestCirculantMatrix:
 
 class TestHankelMatrix:
     def test_init_valid(self):
-        data = np.array([
-            [1, 2, 3, 4],
-            [2, 3, 4, 5],
-            [3, 4, 5, 6],
-            [4, 5, 6, 7]
-        ])
+        data = np.array([[1, 2, 3, 4], [2, 3, 4, 5], [3, 4, 5, 6], [4, 5, 6, 7]])
         hm = HankelMatrix(data)
         assert np.allclose(hm.data, data)
 
@@ -289,16 +289,19 @@ class TestPositiveSemidefiniteMatrix:
 class TestRotationMatrix:
     def test_init_2d_rotation(self):
         theta = np.pi / 4
-        R = np.array([[np.cos(theta), -np.sin(theta)],
-                      [np.sin(theta), np.cos(theta)]])
+        R = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
         rm = RotationMatrix(R)
         assert np.allclose(rm.data, R)
 
     def test_init_3d_rotation(self):
         theta = np.pi / 3
-        R = np.array([[1, 0, 0],
-                      [0, np.cos(theta), -np.sin(theta)],
-                      [0, np.sin(theta), np.cos(theta)]])
+        R = np.array(
+            [
+                [1, 0, 0],
+                [0, np.cos(theta), -np.sin(theta)],
+                [0, np.sin(theta), np.cos(theta)],
+            ]
+        )
         rm = RotationMatrix(R)
         assert np.allclose(rm.data, R)
 

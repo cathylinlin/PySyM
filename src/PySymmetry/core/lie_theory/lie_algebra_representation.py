@@ -14,8 +14,9 @@ from typing import Generic, TypeVar
 
 import numpy as np
 
-from .abstract_lie_algebra import LieAlgebra, LieAlgebraElement
 from PySymmetry.core.matrix.factory import MatrixFactory
+
+from .abstract_lie_algebra import LieAlgebra, LieAlgebraElement
 
 T = TypeVar("T", bound=LieAlgebraElement)
 
@@ -89,9 +90,11 @@ class FundamentalRepresentation(LieAlgebraRepresentation[T]):
 
     def __call__(self, element: T) -> np.ndarray:
         if hasattr(element, "matrix"):
-            m = getattr(element, "matrix")
+            m = element.matrix
             return np.asarray(m, dtype=np.complex128)
-        raise NotImplementedError("Fundamental representation requires matrix Lie algebra elements")
+        raise NotImplementedError(
+            "Fundamental representation requires matrix Lie algebra elements"
+        )
 
     def differential(self, element: T) -> np.ndarray:
         return self(element)
@@ -116,7 +119,9 @@ class TensorProductRepresentation(LieAlgebraRepresentation[T]):
         rep2: LieAlgebraRepresentation[T],
     ):
         if rep1.lie_algebra is not rep2.lie_algebra:
-            raise ValueError("Both representations must use the same Lie algebra instance")
+            raise ValueError(
+                "Both representations must use the same Lie algebra instance"
+            )
         dimension = rep1.dimension * rep2.dimension
         super().__init__(rep1.lie_algebra, dimension)
         self.rep1 = rep1
@@ -136,9 +141,7 @@ class TensorProductRepresentation(LieAlgebraRepresentation[T]):
 
         return term1 + term2
 
-    def _kronecker_product(
-        self, mat1: np.ndarray, mat2: np.ndarray
-    ) -> np.ndarray:
+    def _kronecker_product(self, mat1: np.ndarray, mat2: np.ndarray) -> np.ndarray:
         dim1_row, dim1_col = mat1.shape
         dim2_row, dim2_col = mat2.shape
         result = MatrixFactory.zeros(dim1_row * dim2_row, dim1_col * dim2_col)

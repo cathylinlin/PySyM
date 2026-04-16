@@ -5,8 +5,6 @@
 
 from __future__ import annotations
 
-from typing import List, Optional, Tuple
-
 import numpy as np
 from scipy.linalg import null_space
 
@@ -20,31 +18,42 @@ def _mat_bracket(a: np.ndarray, b: np.ndarray) -> np.ndarray:
 class MatrixLieAlgebraElement(LieAlgebraElement):
     """矩阵李代数元素（实或复矩阵）。"""
 
-    def __init__(self, matrix: np.ndarray, lie_algebra: "MatrixLieAlgebraBase"):
+    def __init__(self, matrix: np.ndarray, lie_algebra: MatrixLieAlgebraBase):
         self.matrix = np.asarray(matrix)
         self._lie = lie_algebra
 
     @property
-    def lie_algebra(self) -> "MatrixLieAlgebraBase":
+    def lie_algebra(self) -> MatrixLieAlgebraBase:
         return self._lie
 
-    def __add__(self, other: LieAlgebraElement) -> "MatrixLieAlgebraElement":
-        if not isinstance(other, MatrixLieAlgebraElement) or other._lie is not self._lie:
+    def __add__(self, other: LieAlgebraElement) -> MatrixLieAlgebraElement:
+        if (
+            not isinstance(other, MatrixLieAlgebraElement)
+            or other._lie is not self._lie
+        ):
             return NotImplemented
         return MatrixLieAlgebraElement(self.matrix + other.matrix, self._lie)
 
-    def __sub__(self, other: LieAlgebraElement) -> "MatrixLieAlgebraElement":
-        if not isinstance(other, MatrixLieAlgebraElement) or other._lie is not self._lie:
+    def __sub__(self, other: LieAlgebraElement) -> MatrixLieAlgebraElement:
+        if (
+            not isinstance(other, MatrixLieAlgebraElement)
+            or other._lie is not self._lie
+        ):
             return NotImplemented
         return MatrixLieAlgebraElement(self.matrix - other.matrix, self._lie)
 
-    def __mul__(self, scalar: float) -> "MatrixLieAlgebraElement":
+    def __mul__(self, scalar: float) -> MatrixLieAlgebraElement:
         return MatrixLieAlgebraElement(self.matrix * scalar, self._lie)
 
-    def bracket(self, other: LieAlgebraElement) -> "MatrixLieAlgebraElement":
-        if not isinstance(other, MatrixLieAlgebraElement) or other._lie is not self._lie:
+    def bracket(self, other: LieAlgebraElement) -> MatrixLieAlgebraElement:
+        if (
+            not isinstance(other, MatrixLieAlgebraElement)
+            or other._lie is not self._lie
+        ):
             raise TypeError("李括号仅对同一李代数中的元素定义")
-        return MatrixLieAlgebraElement(_mat_bracket(self.matrix, other.matrix), self._lie)
+        return MatrixLieAlgebraElement(
+            _mat_bracket(self.matrix, other.matrix), self._lie
+        )
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, MatrixLieAlgebraElement):
@@ -68,16 +77,22 @@ class MatrixLieAlgebraBase(LieAlgebra[MatrixLieAlgebraElement]):
             np.zeros(self._matrix_shape(), dtype=self._dtype()), self
         )
 
-    def bracket(self, x: MatrixLieAlgebraElement, y: MatrixLieAlgebraElement) -> MatrixLieAlgebraElement:
+    def bracket(
+        self, x: MatrixLieAlgebraElement, y: MatrixLieAlgebraElement
+    ) -> MatrixLieAlgebraElement:
         return x.bracket(y)
 
-    def add(self, x: MatrixLieAlgebraElement, y: MatrixLieAlgebraElement) -> MatrixLieAlgebraElement:
+    def add(
+        self, x: MatrixLieAlgebraElement, y: MatrixLieAlgebraElement
+    ) -> MatrixLieAlgebraElement:
         return x + y
 
-    def scalar_multiply(self, x: MatrixLieAlgebraElement, scalar: float) -> MatrixLieAlgebraElement:
+    def scalar_multiply(
+        self, x: MatrixLieAlgebraElement, scalar: float
+    ) -> MatrixLieAlgebraElement:
         return x * scalar
 
-    def _matrix_shape(self) -> Tuple[int, ...]:
+    def _matrix_shape(self) -> tuple[int, ...]:
         raise NotImplementedError
 
     def _dtype(self) -> np.dtype:
@@ -93,10 +108,10 @@ class GeneralLinearLieAlgebra(MatrixLieAlgebraBase):
         self.n = n
         super().__init__(n * n)
 
-    def _matrix_shape(self) -> Tuple[int, int]:
+    def _matrix_shape(self) -> tuple[int, int]:
         return (self.n, self.n)
 
-    def basis(self) -> List[MatrixLieAlgebraElement]:
+    def basis(self) -> list[MatrixLieAlgebraElement]:
         mats = []
         for i in range(self.n):
             for j in range(self.n):
@@ -105,13 +120,13 @@ class GeneralLinearLieAlgebra(MatrixLieAlgebraBase):
                 mats.append(MatrixLieAlgebraElement(e, self))
         return mats
 
-    def from_vector(self, vector: List[float]) -> MatrixLieAlgebraElement:
+    def from_vector(self, vector: list[float]) -> MatrixLieAlgebraElement:
         if len(vector) != self.dimension:
             raise ValueError(f"期望长度为 {self.dimension} 的向量")
         arr = np.asarray(vector, dtype=np.float64).reshape(self.n, self.n)
         return MatrixLieAlgebraElement(arr, self)
 
-    def to_vector(self, element: MatrixLieAlgebraElement) -> List[float]:
+    def to_vector(self, element: MatrixLieAlgebraElement) -> list[float]:
         return element.matrix.reshape(-1).tolist()
 
     def properties(self) -> LieAlgebraProperties:
@@ -138,11 +153,11 @@ class SpecialLinearLieAlgebra(MatrixLieAlgebraBase):
         self.n = n
         super().__init__(n * n - 1)
 
-    def _matrix_shape(self) -> Tuple[int, int]:
+    def _matrix_shape(self) -> tuple[int, int]:
         return (self.n, self.n)
 
-    def basis(self) -> List[MatrixLieAlgebraElement]:
-        mats: List[MatrixLieAlgebraElement] = []
+    def basis(self) -> list[MatrixLieAlgebraElement]:
+        mats: list[MatrixLieAlgebraElement] = []
         for i in range(self.n):
             for j in range(self.n):
                 if i == j:
@@ -157,7 +172,7 @@ class SpecialLinearLieAlgebra(MatrixLieAlgebraBase):
             mats.append(MatrixLieAlgebraElement(h, self))
         return mats
 
-    def from_vector(self, vector: List[float]) -> MatrixLieAlgebraElement:
+    def from_vector(self, vector: list[float]) -> MatrixLieAlgebraElement:
         if len(vector) != self.dimension:
             raise ValueError(f"期望长度为 {self.dimension} 的向量")
         m = np.zeros((self.n, self.n), dtype=np.float64)
@@ -174,9 +189,9 @@ class SpecialLinearLieAlgebra(MatrixLieAlgebraBase):
             idx += 1
         return MatrixLieAlgebraElement(m, self)
 
-    def to_vector(self, element: MatrixLieAlgebraElement) -> List[float]:
+    def to_vector(self, element: MatrixLieAlgebraElement) -> list[float]:
         m = element.matrix
-        out: List[float] = []
+        out: list[float] = []
         for i in range(self.n):
             for j in range(self.n):
                 if i == j:
@@ -210,10 +225,10 @@ class OrthogonalLieAlgebra(MatrixLieAlgebraBase):
         self.n = n
         super().__init__(n * (n - 1) // 2)
 
-    def _matrix_shape(self) -> Tuple[int, int]:
+    def _matrix_shape(self) -> tuple[int, int]:
         return (self.n, self.n)
 
-    def basis(self) -> List[MatrixLieAlgebraElement]:
+    def basis(self) -> list[MatrixLieAlgebraElement]:
         mats = []
         for i in range(self.n):
             for j in range(i + 1, self.n):
@@ -223,7 +238,7 @@ class OrthogonalLieAlgebra(MatrixLieAlgebraBase):
                 mats.append(MatrixLieAlgebraElement(e, self))
         return mats
 
-    def from_vector(self, vector: List[float]) -> MatrixLieAlgebraElement:
+    def from_vector(self, vector: list[float]) -> MatrixLieAlgebraElement:
         if len(vector) != self.dimension:
             raise ValueError(f"期望长度为 {self.dimension} 的向量")
         m = np.zeros((self.n, self.n), dtype=np.float64)
@@ -235,9 +250,9 @@ class OrthogonalLieAlgebra(MatrixLieAlgebraBase):
                 idx += 1
         return MatrixLieAlgebraElement(m, self)
 
-    def to_vector(self, element: MatrixLieAlgebraElement) -> List[float]:
+    def to_vector(self, element: MatrixLieAlgebraElement) -> list[float]:
         m = element.matrix
-        out: List[float] = []
+        out: list[float] = []
         for i in range(self.n):
             for j in range(i + 1, self.n):
                 out.append(float(m[i, j]))
@@ -268,7 +283,7 @@ def _symplectic_J(n: int) -> np.ndarray:
     return j
 
 
-def _sp2n_basis_matrices(n: int) -> List[np.ndarray]:
+def _sp2n_basis_matrices(n: int) -> list[np.ndarray]:
     """通过 X^T J + J X = 0 的零空间得到 sp(2n) 的一组基。"""
     d = 2 * n
     j = _symplectic_J(n)
@@ -282,7 +297,7 @@ def _sp2n_basis_matrices(n: int) -> List[np.ndarray]:
     ns = null_space(m)
     if ns.shape[1] == 0:
         raise RuntimeError("无法构造 sp(2n) 的基")
-    basis: List[np.ndarray] = []
+    basis: list[np.ndarray] = []
     for c in range(ns.shape[1]):
         basis.append(ns[:, c].reshape(d, d))
     return basis
@@ -299,13 +314,13 @@ class SymplecticLieAlgebra(MatrixLieAlgebraBase):
         self._basis_mats = _sp2n_basis_matrices(n)
         super().__init__(len(self._basis_mats))
 
-    def _matrix_shape(self) -> Tuple[int, int]:
+    def _matrix_shape(self) -> tuple[int, int]:
         return (self._d, self._d)
 
-    def basis(self) -> List[MatrixLieAlgebraElement]:
+    def basis(self) -> list[MatrixLieAlgebraElement]:
         return [MatrixLieAlgebraElement(np.array(m), self) for m in self._basis_mats]
 
-    def from_vector(self, vector: List[float]) -> MatrixLieAlgebraElement:
+    def from_vector(self, vector: list[float]) -> MatrixLieAlgebraElement:
         if len(vector) != self.dimension:
             raise ValueError(f"期望长度为 {self.dimension} 的向量")
         m = np.zeros((self._d, self._d), dtype=np.float64)
@@ -313,7 +328,7 @@ class SymplecticLieAlgebra(MatrixLieAlgebraBase):
             m += v * self._basis_mats[c]
         return MatrixLieAlgebraElement(m, self)
 
-    def to_vector(self, element: MatrixLieAlgebraElement) -> List[float]:
+    def to_vector(self, element: MatrixLieAlgebraElement) -> list[float]:
         # 基一般不正交，用最小二乘在基上展开
         b = element.matrix.flatten()
         a = np.column_stack([bm.flatten() for bm in self._basis_mats])
@@ -335,9 +350,9 @@ class SymplecticLieAlgebra(MatrixLieAlgebraBase):
         return f"sp({2 * self.n})"
 
 
-def _skew_hermitian_to_vector(m: np.ndarray) -> List[float]:
+def _skew_hermitian_to_vector(m: np.ndarray) -> list[float]:
     n = m.shape[0]
-    out: List[float] = []
+    out: list[float] = []
     for i in range(n):
         out.append(float(np.imag(m[i, i])))
     for i in range(n):
@@ -347,7 +362,7 @@ def _skew_hermitian_to_vector(m: np.ndarray) -> List[float]:
     return out
 
 
-def _vector_to_skew_hermitian(v: List[float], n: int) -> np.ndarray:
+def _vector_to_skew_hermitian(v: list[float], n: int) -> np.ndarray:
     if len(v) != n * n:
         raise ValueError("向量长度与 u(n) 维数不符")
     m = np.zeros((n, n), dtype=np.complex128)
@@ -365,7 +380,7 @@ def _vector_to_skew_hermitian(v: List[float], n: int) -> np.ndarray:
     return m
 
 
-def _vector_to_skew_hermitian_su(v: List[float], n: int) -> np.ndarray:
+def _vector_to_skew_hermitian_su(v: list[float], n: int) -> np.ndarray:
     if len(v) != n * n - 1:
         raise ValueError("向量长度与 su(n) 维数不符")
     m = np.zeros((n, n), dtype=np.complex128)
@@ -385,9 +400,9 @@ def _vector_to_skew_hermitian_su(v: List[float], n: int) -> np.ndarray:
     return m
 
 
-def _skew_hermitian_su_to_vector(m: np.ndarray) -> List[float]:
+def _skew_hermitian_su_to_vector(m: np.ndarray) -> list[float]:
     n = m.shape[0]
-    out: List[float] = []
+    out: list[float] = []
     for i in range(n - 1):
         out.append(float(np.imag(m[i, i])))
     for i in range(n):
@@ -410,14 +425,14 @@ class UnitaryLieAlgebra(MatrixLieAlgebraBase):
         self.n = n
         super().__init__(n * n)
 
-    def _matrix_shape(self) -> Tuple[int, int]:
+    def _matrix_shape(self) -> tuple[int, int]:
         return (self.n, self.n)
 
     def _dtype(self) -> np.dtype:
         return np.complex128
 
-    def basis(self) -> List[MatrixLieAlgebraElement]:
-        mats: List[MatrixLieAlgebraElement] = []
+    def basis(self) -> list[MatrixLieAlgebraElement]:
+        mats: list[MatrixLieAlgebraElement] = []
         for i in range(self.n):
             e = np.zeros((self.n, self.n), dtype=np.complex128)
             e[i, i] = 1j
@@ -434,11 +449,11 @@ class UnitaryLieAlgebra(MatrixLieAlgebraBase):
                 mats.append(MatrixLieAlgebraElement(f, self))
         return mats
 
-    def from_vector(self, vector: List[float]) -> MatrixLieAlgebraElement:
+    def from_vector(self, vector: list[float]) -> MatrixLieAlgebraElement:
         m = _vector_to_skew_hermitian(vector, self.n)
         return MatrixLieAlgebraElement(m, self)
 
-    def to_vector(self, element: MatrixLieAlgebraElement) -> List[float]:
+    def to_vector(self, element: MatrixLieAlgebraElement) -> list[float]:
         return _skew_hermitian_to_vector(element.matrix)
 
     def properties(self) -> LieAlgebraProperties:
@@ -468,14 +483,14 @@ class SpecialUnitaryLieAlgebra(MatrixLieAlgebraBase):
         self.n = n
         super().__init__(n * n - 1)
 
-    def _matrix_shape(self) -> Tuple[int, int]:
+    def _matrix_shape(self) -> tuple[int, int]:
         return (self.n, self.n)
 
     def _dtype(self) -> np.dtype:
         return np.complex128
 
-    def basis(self) -> List[MatrixLieAlgebraElement]:
-        mats: List[MatrixLieAlgebraElement] = []
+    def basis(self) -> list[MatrixLieAlgebraElement]:
+        mats: list[MatrixLieAlgebraElement] = []
         for k in range(self.n - 1):
             h = np.zeros((self.n, self.n), dtype=np.complex128)
             h[k, k] = 1j
@@ -493,11 +508,11 @@ class SpecialUnitaryLieAlgebra(MatrixLieAlgebraBase):
                 mats.append(MatrixLieAlgebraElement(f, self))
         return mats
 
-    def from_vector(self, vector: List[float]) -> MatrixLieAlgebraElement:
+    def from_vector(self, vector: list[float]) -> MatrixLieAlgebraElement:
         m = _vector_to_skew_hermitian_su(vector, self.n)
         return MatrixLieAlgebraElement(m, self)
 
-    def to_vector(self, element: MatrixLieAlgebraElement) -> List[float]:
+    def to_vector(self, element: MatrixLieAlgebraElement) -> list[float]:
         return _skew_hermitian_su_to_vector(element.matrix)
 
     def properties(self) -> LieAlgebraProperties:
@@ -517,18 +532,18 @@ class SpecialUnitaryLieAlgebra(MatrixLieAlgebraBase):
 
 class SO4LieAlgebra(MatrixLieAlgebraBase):
     """SO(4) 李代数
-    
+
     so(4) ≅ so(3) ⊕ so(3)，是半单李代数，由6个生成元组成：
     - L_i (i=1,2,3): 角动量算符，对应so(3)的生成元
     - A_i (i=1,2,3): Runge-Lenz向量算符
-    
+
     对易关系：
     - [L_i, L_j] = iε_ijk L_k
     - [L_i, A_j] = iε_ijk A_k
     - [A_i, A_j] = iε_ijk L_k
-    
+
     Casimir不变量：C_L = L·L, C_A = A·A, C_total = L·L + A·A
-    
+
     在氢原子中，L² + A² = n² - 1（原子单位）
     """
 
@@ -536,14 +551,14 @@ class SO4LieAlgebra(MatrixLieAlgebraBase):
         self.n = 4
         super().__init__(6)
 
-    def _matrix_shape(self) -> Tuple[int, int]:
+    def _matrix_shape(self) -> tuple[int, int]:
         return (4, 4)
 
     def _dtype(self) -> np.dtype:
         return np.complex128
 
-    def basis(self) -> List[MatrixLieAlgebraElement]:
-        mats: List[MatrixLieAlgebraElement] = []
+    def basis(self) -> list[MatrixLieAlgebraElement]:
+        mats: list[MatrixLieAlgebraElement] = []
         for i in range(4):
             for j in range(i + 1, 4):
                 e = np.zeros((4, 4), dtype=np.complex128)
@@ -561,27 +576,41 @@ class SO4LieAlgebra(MatrixLieAlgebraBase):
 
     def check_bracket_relations(self, verbose: bool = False) -> bool:
         gens = self.basis()
-        gens_dict = {f'T{i}{j}': gens[k] for k, (i, j) in enumerate(
-            [(i, j) for i in range(4) for j in range(i + 1, 4)])}
-        
+        gens_dict = {
+            f"T{i}{j}": gens[k]
+            for k, (i, j) in enumerate(
+                [(i, j) for i in range(4) for j in range(i + 1, 4)]
+            )
+        }
+
         indices = [(i, j) for i in range(4) for j in range(i + 1, 4)]
-        
+
         for a, (ia, ja) in enumerate(indices):
             for b, (ib, jb) in enumerate(indices):
                 if a >= b:
                     continue
-                    
+
                 expected = np.zeros((4, 4), dtype=np.complex128)
                 for c, (ic, jc) in enumerate(indices):
-                    f_abc = self._levi_civita(ia, ja, ic) * (1 if ja == ib else -1 if ja == jb else 0)
-                    f_abc += self._levi_civita(ia, ja, jc) * (-1 if ja == ib else 1 if ja == jb else 0)
-                    f_abc += self._levi_civita(ib, jb, ic) * (1 if jb == ia else -1 if jb == ja else 0)
-                    f_abc += self._levi_civita(ib, jb, jc) * (-1 if jb == ia else 1 if jb == ja else 0)
+                    f_abc = self._levi_civita(ia, ja, ic) * (
+                        1 if ja == ib else -1 if ja == jb else 0
+                    )
+                    f_abc += self._levi_civita(ia, ja, jc) * (
+                        -1 if ja == ib else 1 if ja == jb else 0
+                    )
+                    f_abc += self._levi_civita(ib, jb, ic) * (
+                        1 if jb == ia else -1 if jb == ja else 0
+                    )
+                    f_abc += self._levi_civita(ib, jb, jc) * (
+                        -1 if jb == ia else 1 if jb == ja else 0
+                    )
                     if abs(f_abc) > 0.1:
                         expected += f_abc * gens[c].matrix
-                
-                computed = gens[a].matrix @ gens[b].matrix - gens[b].matrix @ gens[a].matrix
-                
+
+                computed = (
+                    gens[a].matrix @ gens[b].matrix - gens[b].matrix @ gens[a].matrix
+                )
+
                 if not np.allclose(computed, expected, atol=1e-10):
                     if verbose:
                         print(f"Bracket [{a},{b}] mismatch")
@@ -605,18 +634,18 @@ class SO4LieAlgebra(MatrixLieAlgebraBase):
 
 class SO31LieAlgebra(MatrixLieAlgebraBase):
     """SO(3) ⊂ SO(4) 李代数（第一分量）
-    
+
     只包含L_i生成元的so(3)子代数。
     """
 
     def __init__(self):
         super().__init__(3)
 
-    def _matrix_shape(self) -> Tuple[int, int]:
+    def _matrix_shape(self) -> tuple[int, int]:
         return (3, 3)
 
-    def basis(self) -> List[MatrixLieAlgebraElement]:
-        mats: List[MatrixLieAlgebraElement] = []
+    def basis(self) -> list[MatrixLieAlgebraElement]:
+        mats: list[MatrixLieAlgebraElement] = []
         for i in range(3):
             for j in range(i + 1, 3):
                 e = np.zeros((3, 3))
@@ -642,18 +671,18 @@ class SO31LieAlgebra(MatrixLieAlgebraBase):
 
 class SO32LieAlgebra(MatrixLieAlgebraBase):
     """SO(3) ⊂ SO(4) 李代数（第二分量）
-    
+
     只包含A_i生成元的so(3)子代数。
     """
 
     def __init__(self):
         super().__init__(3)
 
-    def _matrix_shape(self) -> Tuple[int, int]:
+    def _matrix_shape(self) -> tuple[int, int]:
         return (3, 3)
 
-    def basis(self) -> List[MatrixLieAlgebraElement]:
-        mats: List[MatrixLieAlgebraElement] = []
+    def basis(self) -> list[MatrixLieAlgebraElement]:
+        mats: list[MatrixLieAlgebraElement] = []
         for i in range(3):
             for j in range(i + 1, 3):
                 e = np.zeros((3, 3))

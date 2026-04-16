@@ -2,16 +2,17 @@
 
 与物理应用的接口面：特征标内积、不可约分解、张量积与直和表示；具体哈密顿量或截面公式在更上层实现。
 """
+
 from .abstract_representation import GroupRepresentation
 from .character import Character
-from .matrix_representation import MatrixRepresentation
 from .induced import InducedRepresentation
 from .irreducible import IrreducibleRepresentationFinder
+from .matrix_representation import MatrixRepresentation
 
 __all__ = [
-    'GroupRepresentation',
-    'Character',
-    'MatrixRepresentation',
-    'InducedRepresentation',
-    'IrreducibleRepresentationFinder'
+    "GroupRepresentation",
+    "Character",
+    "MatrixRepresentation",
+    "InducedRepresentation",
+    "IrreducibleRepresentationFinder",
 ]

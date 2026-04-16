@@ -5,7 +5,7 @@ from PySymmetry.core.matrix.transformations import MatrixTransformations
 
 class TestMatrixTransformations:
     """Test suite for MatrixTransformations class."""
-    
+
     def setup_method(self):
         self.transform = MatrixTransformations()
         self.A = np.array([[1, 2], [3, 4]], dtype=float)
@@ -14,7 +14,7 @@ class TestMatrixTransformations:
     def test_similarity_transform(self):
         P = np.array([[1, 1], [0, 1]], dtype=float)
         result = self.transform.similarity_transform(self.A, P)
-        
+
         P_inv = np.linalg.inv(P)
         expected = P_inv @ self.A @ P
         assert np.allclose(result, expected)
@@ -51,11 +51,13 @@ class TestMatrixTransformations:
 
     def test_unitary_transform(self):
         theta = np.pi / 4
-        U = np.array([[np.cos(theta), -np.sin(theta)],
-                      [np.sin(theta), np.cos(theta)]], dtype=complex)
+        U = np.array(
+            [[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]],
+            dtype=complex,
+        )
         A = np.array([[1, 1j], [-1j, 2]], dtype=complex)
         result = self.transform.unitary_transform(A, U)
-        
+
         U_H = U.conj().T
         expected = U_H @ A @ U
         assert np.allclose(result, expected)
@@ -67,10 +69,12 @@ class TestMatrixTransformations:
 
     def test_orthogonal_transform(self):
         theta = np.pi / 6
-        Q = np.array([[np.cos(theta), -np.sin(theta)],
-                      [np.sin(theta), np.cos(theta)]], dtype=float)
+        Q = np.array(
+            [[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]],
+            dtype=float,
+        )
         result = self.transform.orthogonal_transform(self.A, Q)
-        
+
         Q_T = Q.T
         expected = Q_T @ self.A @ Q
         assert np.allclose(result, expected)
@@ -335,75 +339,75 @@ class TestMatrixTransformations:
 
 class TestTransformationsDimensionChecks:
     """Test dimension and type validation in transformations."""
-    
+
     def test_ndim_checks_similarity(self):
         with pytest.raises(ValueError, match="输入矩阵必须是二维数组"):
             MatrixTransformations.similarity_transform(np.array([1, 2, 3]), np.eye(3))
-    
+
     def test_ndim_checks_congruence_matrix(self):
         with pytest.raises(ValueError, match="输入矩阵必须是二维数组"):
             MatrixTransformations.congruence_transform(np.array([1, 2, 3]), np.eye(3))
-    
+
     def test_ndim_checks_congruence_P(self):
         with pytest.raises(ValueError, match="变换矩阵必须是二维数组"):
             MatrixTransformations.congruence_transform(np.eye(3), np.array([1, 2, 3]))
-    
+
     def test_ndim_checks_unitary_matrix(self):
         with pytest.raises(ValueError, match="输入矩阵必须是二维数组"):
             MatrixTransformations.unitary_transform(np.array([1, 2, 3]), np.eye(3))
-    
+
     def test_ndim_checks_orthogonal_matrix(self):
         with pytest.raises(ValueError, match="输入矩阵必须是二维数组"):
             MatrixTransformations.orthogonal_transform(np.array([1, 2, 3]), np.eye(3))
-    
+
     def test_ndim_checks_row_operation(self):
         with pytest.raises(ValueError, match="输入矩阵必须是二维数组"):
             MatrixTransformations.row_operation(np.array([1, 2, 3]), 0, 1)
-    
+
     def test_ndim_checks_column_operation(self):
         with pytest.raises(ValueError, match="输入矩阵必须是二维数组"):
             MatrixTransformations.column_operation(np.array([1, 2, 3]), 0, 1)
-    
+
     def test_ndim_checks_row_swap(self):
         with pytest.raises(ValueError, match="输入矩阵必须是二维数组"):
             MatrixTransformations.row_swap(np.array([1, 2, 3]), 0, 1)
-    
+
     def test_ndim_checks_column_swap(self):
         with pytest.raises(ValueError, match="输入矩阵必须是二维数组"):
             MatrixTransformations.column_swap(np.array([1, 2, 3]), 0, 1)
-    
+
     def test_ndim_checks_row_scale(self):
         with pytest.raises(ValueError, match="输入矩阵必须是二维数组"):
             MatrixTransformations.row_scale(np.array([1, 2, 3]), 0, 2.0)
-    
+
     def test_ndim_checks_column_scale(self):
         with pytest.raises(ValueError, match="输入矩阵必须是二维数组"):
             MatrixTransformations.column_scale(np.array([1, 2, 3]), 0, 2.0)
-    
+
     def test_ndim_checks_gauss_jordan(self):
         with pytest.raises(ValueError, match="输入矩阵必须是二维数组"):
             MatrixTransformations.gauss_jordan_elimination(np.array([1, 2, 3]))
-    
+
     def test_ndim_checks_row_echelon(self):
         with pytest.raises(ValueError, match="输入矩阵必须是二维数组"):
             MatrixTransformations.row_echelon_form(np.array([1, 2, 3]))
-    
+
     def test_ndim_checks_bidiagonal(self):
         with pytest.raises(ValueError, match="输入矩阵必须是二维数组"):
             MatrixTransformations.bidiagonal_form(np.array([1, 2, 3]))
-    
+
     def test_ndim_checks_tridiagonal(self):
         with pytest.raises(ValueError, match="输入矩阵必须是二维数组"):
             MatrixTransformations.tridiagonal_form(np.array([1, 2, 3]))
-    
+
     def test_ndim_checks_jordan(self):
         with pytest.raises(ValueError, match="输入矩阵必须是二维数组"):
             MatrixTransformations.jordan_canonical_form(np.array([1, 2, 3]))
-    
+
     def test_ndim_checks_smith(self):
         with pytest.raises(ValueError, match="输入矩阵必须是二维数组"):
             MatrixTransformations.smith_normal_form(np.array([1, 2, 3]))
-    
+
     def test_ndim_checks_schur(self):
         with pytest.raises(ValueError, match="输入矩阵必须是二维数组"):
             MatrixTransformations.schur_form(np.array([1, 2, 3]))
@@ -411,30 +415,30 @@ class TestTransformationsDimensionChecks:
 
 class TestSquareMatrixRequirements:
     """Test square matrix requirements for various transformations."""
-    
+
     def test_similarity_transform_nonsquare(self):
         A = np.array([[1, 2, 3], [4, 5, 6]], dtype=float)
         P = np.eye(2)
         with pytest.raises(ValueError, match="相似变换需要方阵"):
             MatrixTransformations.similarity_transform(A, P)
-    
+
     def test_unitary_transform_nonsquare(self):
         A = np.array([[1, 2, 3], [4, 5, 6]], dtype=float)
         U = np.eye(3, dtype=complex)
         with pytest.raises(ValueError, match="酉变换需要方阵"):
             MatrixTransformations.unitary_transform(A, U)
-    
+
     def test_orthogonal_transform_nonsquare(self):
         A = np.array([[1, 2, 3], [4, 5, 6]], dtype=float)
         Q = np.eye(3)
         with pytest.raises(ValueError, match="正交变换需要方阵"):
             MatrixTransformations.orthogonal_transform(A, Q)
-    
+
     def test_tridiagonal_nonsquare(self):
         A = np.array([[1, 2, 3], [4, 5, 6]], dtype=float)
         with pytest.raises(ValueError, match="三对角形式需要方阵"):
             MatrixTransformations.tridiagonal_form(A)
-    
+
     def test_jordan_nonsquare(self):
         A = np.array([[1, 2], [3, 4], [5, 6]], dtype=float)
         with pytest.raises(ValueError, match="若尔当标准形需要方阵"):
@@ -443,12 +447,12 @@ class TestSquareMatrixRequirements:
 
 class TestCompanionFormEdgeCases:
     """Test edge cases for companion form."""
-    
+
     def test_companion_monic_polynomial(self):
         coeffs = np.array([1, 0, -1], dtype=float)
         result = MatrixTransformations.companion_form(coeffs)
         assert result.shape == (2, 2)
-    
+
     def test_companion_cubic(self):
         coeffs = np.array([1, -6, 11, -6], dtype=float)
         result = MatrixTransformations.companion_form(coeffs)

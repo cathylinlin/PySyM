@@ -23,16 +23,15 @@ from . import (
     matrix,
     matrix_groups,
     representation,
-    utils, 
+    utils,
 )
 
-
 __all__ = [
-    'algebraic_structures',
-    'group_theory',
-    'lie_theory',
-    'matrix',
-    'matrix_groups',
-    'representation',
-    'utils',
+    "algebraic_structures",
+    "group_theory",
+    "lie_theory",
+    "matrix",
+    "matrix_groups",
+    "representation",
+    "utils",
 ]

@@ -58,21 +58,16 @@ class TestMatrixOperations:
         assert np.allclose(result, expected)
 
     def test_conjugate_transpose(self):
-        m = np.array([[1+1j, 2], [3, 4+1j]])
+        m = np.array([[1 + 1j, 2], [3, 4 + 1j]])
         result = MatrixOperations.conjugate_transpose(m)
-        expected = np.array([[1-1j, 3], [2, 4-1j]])
+        expected = np.array([[1 - 1j, 3], [2, 4 - 1j]])
         assert np.allclose(result, expected)
 
     def test_kronecker_product(self):
         a = np.array([[1, 2], [3, 4]])
         b = np.array([[0, 1], [1, 0]])
         result = MatrixOperations.kronecker_product(a, b)
-        expected = np.array([
-            [0, 1, 0, 2],
-            [1, 0, 2, 0],
-            [0, 3, 0, 4],
-            [3, 0, 4, 0]
-        ])
+        expected = np.array([[0, 1, 0, 2], [1, 0, 2, 0], [0, 3, 0, 4], [3, 0, 4, 0]])
         assert np.allclose(result, expected)
 
     def test_hadamard_product(self):
@@ -86,11 +81,7 @@ class TestMatrixOperations:
         a = np.array([1, 2, 3])
         b = np.array([4, 5, 6])
         result = MatrixOperations.outer_product(a, b)
-        expected = np.array([
-            [4, 5, 6],
-            [8, 10, 12],
-            [12, 15, 18]
-        ])
+        expected = np.array([[4, 5, 6], [8, 10, 12], [12, 15, 18]])
         assert np.allclose(result, expected)
 
     def test_inner_product(self):
@@ -184,7 +175,7 @@ class TestMatrixOperations:
 
     def test_norm_fro(self):
         m = np.array([[1, 2], [3, 4]])
-        result = MatrixOperations.norm(m, 'fro')
+        result = MatrixOperations.norm(m, "fro")
         expected = np.sqrt(30)
         assert np.allclose(result, expected)
 

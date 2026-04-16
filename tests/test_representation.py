@@ -1,4 +1,5 @@
 """群表示论回归测试：同态、特征标正交、不可约分解与诱导表示（供物理层对接）。"""
+
 import unittest
 
 import numpy as np

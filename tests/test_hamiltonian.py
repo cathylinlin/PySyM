@@ -33,6 +33,7 @@ class TestMatrixHamiltonian:
 
     def test_expectation(self):
         from PySymmetry.phys.quantum.states import Ket
+
         H = np.array([[1, 0], [0, 2]], dtype=complex)
         ham = MatrixHamiltonian(H)
         ket = Ket(np.array([1, 0], dtype=complex))
@@ -41,6 +42,7 @@ class TestMatrixHamiltonian:
 
     def test_variance(self):
         from PySymmetry.phys.quantum.states import Ket
+
         H = np.array([[1, 0], [0, 2]], dtype=complex)
         ham = MatrixHamiltonian(H)
         ket = Ket(np.array([1, 0], dtype=complex))
@@ -49,6 +51,7 @@ class TestMatrixHamiltonian:
 
     def test_ground_state(self):
         from PySymmetry.phys.quantum.states import Ket
+
         H = np.array([[2, 1], [1, 2]], dtype=complex)
         ham = MatrixHamiltonian(H)
         state, energy = ham.ground_state()
@@ -78,6 +81,7 @@ class TestMatrixHamiltonian:
         class MockSymmetry:
             def representation_matrix(self, dim):
                 return np.eye(dim)
+
         H = np.array([[1, 0], [0, 2]], dtype=complex)
         ham = MatrixHamiltonian(H)
         sym = MockSymmetry()
@@ -89,18 +93,14 @@ class TestMatrixHamiltonian:
         H = np.array([[1, 0], [0, 2]], dtype=complex)
         ham = MatrixHamiltonian(H)
         d = ham.to_dict()
-        assert d['type'] == 'MatrixHamiltonian'
-        assert d['dimension'] == 2
+        assert d["type"] == "MatrixHamiltonian"
+        assert d["dimension"] == 2
 
     def test_from_dict(self):
-        data = {
-            'type': 'MatrixHamiltonian',
-            'name': 'Test',
-            'matrix': [[1, 0], [0, 2]]
-        }
+        data = {"type": "MatrixHamiltonian", "name": "Test", "matrix": [[1, 0], [0, 2]]}
         ham = MatrixHamiltonian.from_dict(data)
         assert ham.dimension == 2
-        assert ham.name == 'Test'
+        assert ham.name == "Test"
 
 
 class TestFreeParticleHamiltonian:
@@ -110,6 +110,7 @@ class TestFreeParticleHamiltonian:
 
     def test_kinetic_energy(self):
         from PySymmetry.phys.quantum.states import Ket
+
         ham = FreeParticleHamiltonian(mass=1.0, basis_size=10)
         ket = Ket(10)
         E = ham.get_kinetic_energy(ket)
@@ -118,16 +119,16 @@ class TestFreeParticleHamiltonian:
     def test_to_dict(self):
         ham = FreeParticleHamiltonian(mass=2.0, basis_size=20)
         d = ham.to_dict()
-        assert d['type'] == 'FreeParticleHamiltonian'
-        assert d['mass'] == 2.0
+        assert d["type"] == "FreeParticleHamiltonian"
+        assert d["mass"] == 2.0
 
     def test_from_dict(self):
         data = {
-            'type': 'FreeParticleHamiltonian',
-            'mass': 1.5,
-            'dimension': 1,
-            'basis_size': 50,
-            'lattice_spacing': 0.01
+            "type": "FreeParticleHamiltonian",
+            "mass": 1.5,
+            "dimension": 1,
+            "basis_size": 50,
+            "lattice_spacing": 0.01,
         }
         ham = FreeParticleHamiltonian.from_dict(data)
         assert ham._mass == 1.5
@@ -170,21 +171,21 @@ class TestHarmonicOscillatorHamiltonian:
     def test_to_dict(self):
         ham = HarmonicOscillatorHamiltonian(mass=2.0, frequency=0.5, dimension=25)
         d = ham.to_dict()
-        assert d['type'] == 'HarmonicOscillatorHamiltonian'
-        assert d['mass'] == 2.0
-        assert d['frequency'] == 0.5
+        assert d["type"] == "HarmonicOscillatorHamiltonian"
+        assert d["mass"] == 2.0
+        assert d["frequency"] == 0.5
 
     def test_from_dict(self):
         data = {
-            'type': 'HarmonicOscillatorHamiltonian',
-            'mass': 1.0,
-            'frequency': 1.0,
-            'dimension': 20,
-            'hbar': 1.0
+            "type": "HarmonicOscillatorHamiltonian",
+            "mass": 1.0,
+            "frequency": 1.0,
+            "dimension": 20,
+            "hbar": 1.0,
         }
         ham = HarmonicOscillatorHamiltonian.from_dict(data)
         assert ham._m == 1.0
-        assert hasattr(ham, '_omega')
+        assert hasattr(ham, "_omega")
 
     def test_ground_state(self):
         ham = HarmonicOscillatorHamiltonian(dimension=30)

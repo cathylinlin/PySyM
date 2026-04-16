@@ -7,32 +7,33 @@
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Optional, TypeVar, Generic
+from typing import Generic, TypeVar
+
 from .abstract_lie_algebra import LieAlgebra, LieAlgebraElement
 from .lie_algebra_representation import LieAlgebraRepresentation
 
-T = TypeVar('T', bound='LieAlgebraElement')
-U = TypeVar('U', bound='LieAlgebraElement')
+T = TypeVar("T", bound="LieAlgebraElement")
+U = TypeVar("U", bound="LieAlgebraElement")
 
 
 class LieBracket(ABC, Generic[T]):
     """李括号操作"""
-    
+
     @abstractmethod
     def __call__(self, x: T, y: T) -> T:
         """计算李括号 [x, y]"""
         pass
-    
+
     @abstractmethod
     def is_anticommutative(self) -> bool:
         """判断是否满足反对称性"""
         pass
-    
+
     @abstractmethod
     def satisfies_jacobi_identity(self, x: T, y: T, z: T) -> bool:
         """判断是否满足雅可比恒等式"""
         pass
-    
+
     @abstractmethod
     def __str__(self) -> str:
         """字符串表示"""
@@ -41,20 +42,20 @@ class LieBracket(ABC, Generic[T]):
 
 class StandardLieBracket(LieBracket[T]):
     """标准李括号操作"""
-    
+
     def __init__(self, lie_algebra: LieAlgebra[T]):
         """初始化标准李括号"""
         self.lie_algebra = lie_algebra
-    
+
     def __call__(self, x: T, y: T) -> T:
         """计算李括号 [x, y]"""
         return self.lie_algebra.bracket(x, y)
-    
+
     def is_anticommutative(self) -> bool:
         """判断是否满足反对称性"""
         # 李代数的李括号满足反对称性
         return True
-    
+
     def satisfies_jacobi_identity(self, x: T, y: T, z: T) -> bool:
         """判断是否满足雅可比恒等式"""
         # 计算雅可比恒等式：[x, [y, z]] + [y, [z, x]] + [z, [x, y]] = 0
@@ -63,39 +64,39 @@ class StandardLieBracket(LieBracket[T]):
         term3 = self.lie_algebra.bracket(z, self.lie_algebra.bracket(x, y))
         result = self.lie_algebra.add(term1, self.lie_algebra.add(term2, term3))
         return result == self.lie_algebra.zero()
-    
+
     def __str__(self) -> str:
         return f"StandardLieBracket({self.lie_algebra})"
 
 
 class LieAlgebraHomomorphism(ABC, Generic[T, U]):
     """李代数同态"""
-    
+
     def __init__(self, domain: LieAlgebra[T], codomain: LieAlgebra[U]):
         """初始化李代数同态"""
         self.domain = domain
         self.codomain = codomain
-    
+
     @abstractmethod
     def __call__(self, element: T) -> U:
         """同态映射"""
         pass
-    
+
     @abstractmethod
     def is_homomorphism(self) -> bool:
         """判断是否为同态"""
         pass
-    
+
     @abstractmethod
     def kernel(self) -> LieAlgebra[T]:
         """计算同态核"""
         pass
-    
+
     @abstractmethod
     def image(self) -> LieAlgebra[U]:
         """计算同态像"""
         pass
-    
+
     @abstractmethod
     def __str__(self) -> str:
         """字符串表示"""
@@ -104,8 +105,10 @@ class LieAlgebraHomomorphism(ABC, Generic[T, U]):
 
 class LinearLieAlgebraHomomorphism(LieAlgebraHomomorphism[T, U]):
     """线性李代数同态"""
-    
-    def __init__(self, domain: LieAlgebra[T], codomain: LieAlgebra[U], matrix: List[List[float]]):
+
+    def __init__(
+        self, domain: LieAlgebra[T], codomain: LieAlgebra[U], matrix: list[list[float]]
+    ):
         """初始化线性李代数同态"""
         super().__init__(domain, codomain)
         if not matrix or not matrix[0]:
@@ -116,16 +119,19 @@ class LinearLieAlgebraHomomorphism(LieAlgebraHomomorphism[T, U]):
                 f"得到 ({len(matrix)}, {len(matrix[0])})"
             )
         self.matrix = matrix
-    
+
     def __call__(self, element: T) -> U:
         """同态映射"""
         # 将元素转换为向量
         vector = self.domain.to_vector(element)
         # 计算线性映射
-        result_vector = [sum(self.matrix[i][j] * vector[j] for j in range(len(vector))) for i in range(len(self.matrix))]
+        result_vector = [
+            sum(self.matrix[i][j] * vector[j] for j in range(len(vector)))
+            for i in range(len(self.matrix))
+        ]
         # 将向量转换回元素
         return self.codomain.from_vector(result_vector)
-    
+
     def is_homomorphism(self) -> bool:
         """判断是否为同态"""
         # 检查是否保持李括号
@@ -143,40 +149,40 @@ class LinearLieAlgebraHomomorphism(LieAlgebraHomomorphism[T, U]):
                 if phi_bracket != phi_bracket2:
                     return False
         return True
-    
+
     def kernel(self) -> LieAlgebra[T]:
         """计算同态核"""
         # 简单实现：返回零子代数
         # 实际实现需要求解线性方程组
         raise NotImplementedError("Kernel calculation not implemented")
-    
+
     def image(self) -> LieAlgebra[U]:
         """计算同态像"""
         # 简单实现：返回整个余定义域
         # 实际实现需要计算矩阵的列空间
         raise NotImplementedError("Image calculation not implemented")
-    
+
     def __str__(self) -> str:
         return f"LinearLieAlgebraHomomorphism({self.domain} → {self.codomain})"
 
 
 class LieAlgebraAction(ABC, Generic[T]):
     """李代数作用"""
-    
+
     def __init__(self, lie_algebra: LieAlgebra[T]):
         """初始化李代数作用"""
         self.lie_algebra = lie_algebra
-    
+
     @abstractmethod
-    def __call__(self, element: T, vector: List[float]) -> List[float]:
+    def __call__(self, element: T, vector: list[float]) -> list[float]:
         """李代数元素作用于向量"""
         pass
-    
+
     @abstractmethod
     def is_action(self) -> bool:
         """判断是否为作用"""
         pass
-    
+
     @abstractmethod
     def __str__(self) -> str:
         """字符串表示"""
@@ -185,13 +191,15 @@ class LieAlgebraAction(ABC, Generic[T]):
 
 class LinearLieAlgebraAction(LieAlgebraAction[T]):
     """线性李代数作用"""
-    
-    def __init__(self, lie_algebra: LieAlgebra[T], representation: 'LieAlgebraRepresentation[T]'):
+
+    def __init__(
+        self, lie_algebra: LieAlgebra[T], representation: "LieAlgebraRepresentation[T]"
+    ):
         """初始化线性李代数作用"""
         super().__init__(lie_algebra)
         self.representation = representation
-    
-    def __call__(self, element: T, vector: List[float]) -> List[float]:
+
+    def __call__(self, element: T, vector: list[float]) -> list[float]:
         """李代数元素作用于向量"""
         # 计算表示矩阵
         matrix = self.representation(element)
@@ -203,7 +211,7 @@ class LinearLieAlgebraAction(LieAlgebraAction[T]):
                 row_sum += matrix[i, j] * vector[j]
             result.append(row_sum)
         return result
-    
+
     def is_action(self) -> bool:
         """判断是否为作用"""
         # 检查是否满足线性性和李括号保持
@@ -221,6 +229,6 @@ class LinearLieAlgebraAction(LieAlgebraAction[T]):
                 # 这里简化实现，假设表示是李代数表示
                 pass
         return True
-    
+
     def __str__(self) -> str:
         return f"LinearLieAlgebraAction({self.lie_algebra}, {self.representation})"
